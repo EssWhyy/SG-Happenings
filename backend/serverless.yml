@@ -1,0 +1,35 @@
+service: backend
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-southeast-1
+
+build:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude:
+      - '@aws-sdk/*'
+
+functions:
+  api:
+    handler: app.handler
+    events:
+      - httpApi:
+          path: '/{proxy+}'
+          method: ANY
+          cors: true
+      - httpApi:
+          path: '/'
+          method: ANY
+          cors: true
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    useHttpApi: true
+    noAuth: true
