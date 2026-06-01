@@ -11,7 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@codegenie/serverless-express": "^5.0.0",
+    "@codegenie/serverless-express": "^4.15.0",
     "cors": "^2.8.6",
     "express": "^5.2.1"
   },
