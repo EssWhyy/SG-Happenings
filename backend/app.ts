@@ -12,7 +12,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Convert raw AWS Buffers into readable objects before passing to routes
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (Buffer.isBuffer(req.body)) {
     try {
@@ -24,42 +23,50 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// 1. GET ROUTE: Fetch all listings
+// 1. GET ROUTE: Fetch all master listings
 app.get('/api/listings', async (req: Request, res: Response) => {
-  const listings = await mockDb.getAllListings();
+  const listings = await mockDb.debugGetAllMasterListings();
   res.json(listings);
 });
 
-// 2. POST ROUTE: Create a new listing
+// NEW ROUTE: Fetch all listings created by a specific user (AP3)
+app.get('/api/users/:userId/listings', async (req: Request, res: Response) => {
+  // Cast req.params.userId explicitly as a string
+  const userId = req.params.userId as string;
+  
+  const listings = await mockDb.getListingsByUser(userId);
+  res.json(listings);
+});
+
+// 2. POST ROUTE: Create a new listing using NoSQL transactional replication pattern
 app.post('/api/listings', async (req: Request, res: Response) => {
   try {
-    // Debug log
     console.log("Incoming Frontend Body:", req.body);
 
     const body: CreateListingRequest = req.body || {};
 
     const newListing: Listing = {
       id: `list_${Math.random().toString(36).substring(2, 9)}`,
-      
-      // fallbacks
       type: body.type || "Unknown Type",
       title: body.title || "No Title Provided",
       description: body.description ?? "",
       contact: body.contact || "No Contact Provided",
-      
       authorId: body.authorId || "usr_anonymous",
       image: body.image ?? "",
-      x_cood: body.x_cood || 0,
-      y_cood: body.y_cood || 0,
+      // Updated field names to match your standardized Listing interface specs
+      latitude: body.latitude || 0,   
+      longitude: body.longitude || 0,
+      createdAt: new Date().toISOString(), // Vital for NoSQL sort tracking
       expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     };
 
-    await mockDb.saveListing(newListing);
+    // This creates BOTH main table records under the hood
+    const savedListing = await mockDb.saveListing(newListing);
 
     const responsePayload: CreateEditListingResponse = {
       success: true,
-      id: newListing.id,
-      listing: newListing
+      id: savedListing.id,
+      listing: savedListing
     };
 
     res.status(201).json(responsePayload);
@@ -69,5 +76,4 @@ app.post('/api/listings', async (req: Request, res: Response) => {
   }
 });
 
-// This is the bridge that turns your Express app into an AWS Lambda function
 export const handler = serverlessExpress({ app });

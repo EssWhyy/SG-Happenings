@@ -1,5 +1,9 @@
 // shared/apiContract.ts
 
+// ==========================================
+// BASE OBJECT STRUCTURES
+// ==========================================
+
 export interface User {
   id: string;
   name: string;
@@ -7,19 +11,20 @@ export interface User {
   accountCreationDate: string; //ISO DateTime String
   createdListings: string[]; //own listing ids
   bookmarks: string[]; //other user listing ids that are bookmarked
+  isAdmin: boolean;
 }
-
-// What the frontend must send to create a task
 export interface Listing {
   id: string;
   type: string;
   title: string;
   description?: string;
   authorId: string; // user who made the listing
-  image?: string; //id or string linked to S3 item
-  contact: string;
-  x_cood: number;
-  y_cood: number;
+  image?: string; // id or string linked to S3 item
+  contact?: string;
+  link?: string;
+  latitude: number;
+  longitude: number;
+  createdAt: string; //ISO DateTime String
   expiryDate: string; //ISO DateTime String
 }
 
@@ -27,7 +32,6 @@ export interface Listing {
 // REQUEST PAYLOADS (What the frontend sends)
 // ==========================================
 
-// When creating a listing, the frontend doesn't know the ID or backend dates yet
 export interface CreateListingRequest {
   type: string;
   title: string;
@@ -35,8 +39,8 @@ export interface CreateListingRequest {
   authorId: string; 
   image?: string;
   contact: string;
-  x_cood: number;
-  y_cood: number;
+  latitude: number;
+  longitude: number;
 }
 
 // ==========================================

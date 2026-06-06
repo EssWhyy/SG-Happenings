@@ -4,6 +4,23 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: ap-southeast-1
+  # 1. Environment variables available to your code via process.env
+  environment:
+    DYNAMODB_TABLE_NAME: ${self:service}-listings-${sls:stage}
+  # 2. Grant permissions to your Lambda function to talk to DynamoDB
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - Fn::GetAtt: [ ListingsTable, Arn ]
 
 build:
   esbuild:
@@ -33,3 +50,22 @@ custom:
   serverless-offline:
     useHttpApi: true
     noAuth: true
+
+# 3. Infrastructure as Code: Automatically spins up your exact table structure in AWS!
+resources:
+  Resources:
+    ListingsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-listings-${sls:stage}
+        BillingMode: PAY_PER_REQUEST # This is On-Demand pricing
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH # Partition Key
+          - AttributeName: SK
+            KeyType: RANGE # Sort Key

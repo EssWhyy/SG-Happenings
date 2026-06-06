@@ -40,8 +40,8 @@ export default function App() {
       type,
       contact,
       authorId: "usr_mock_123", // Using a fake User ID for now
-      x_cood: 1.3521,            // Standard latitude mock
-      y_cood: 103.8198,          // Standard longitude mock
+      latitude: 1.3521,            // Standard latitude mock
+      longitude: 103.8198,          // Standard longitude mock
       description: "Created from the frontend UI!" 
     };
 

@@ -6,6 +6,7 @@ Backend:
 ```
 cd backend
 npx serverless dev
+npx serverless deploy --stage dev (if changes to DynamoDB structure)
 ```
 Frontend:
 ```
