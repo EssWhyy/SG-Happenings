@@ -21,6 +21,7 @@ provider:
             - dynamodb:DeleteItem
           Resource:
             - Fn::GetAtt: [ ListingsTable, Arn ]
+            - Fn::Join: [ '/', [ { Fn::GetAtt: [ ListingsTable, Arn ] }, 'index', '*' ] ]
 
 build:
   esbuild:

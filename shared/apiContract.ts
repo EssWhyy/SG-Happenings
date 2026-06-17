@@ -24,6 +24,7 @@ export interface Listing {
   link?: string;
   latitude: number;
   longitude: number;
+  district: string; // which GRC is the listing in on the map
   createdAt: string; //ISO DateTime String
   expiryDate: string; //ISO DateTime String
 }
@@ -41,6 +42,7 @@ export interface CreateListingRequest {
   contact: string;
   latitude: number;
   longitude: number;
+  district: string;
 }
 
 // ==========================================
