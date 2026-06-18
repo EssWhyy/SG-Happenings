@@ -222,14 +222,16 @@ export const mockDb = {
     return cleanListing;
   },
 
-  // AP4: Get listings by specific district using DistrictIndex GSI
+// AP4: Get listings by specific district using DistrictIndex GSI
   getListingsByDistrict: async (district: string): Promise<Listing[]> => {
     const command = new QueryCommand({
       TableName: TABLE_NAME,
-      IndexName: "DistrictIndex", // GSI Name
+      IndexName: "DistrictIndex", 
       KeyConditionExpression: "district = :district",
+      FilterExpression: "SK = :sk", 
       ExpressionAttributeValues: {
         ":district": district,
+        ":sk": "METADATA", // Only grab the master record, ignore the user history copy
       },
       ScanIndexForward: false, // Newest First
     });
@@ -238,15 +240,17 @@ export const mockDb = {
     return (response.Items || []) as unknown as Listing[];
   },
 
-  // AP5: Get listings by specific type using TypeIndex GSI
+// AP5: Get listings by specific type using TypeIndex GSI
   getListingsByType: async (type: string): Promise<Listing[]> => {
     const command = new QueryCommand({
       TableName: TABLE_NAME,
-      IndexName: "TypeIndex", // GSI Name
-      KeyConditionExpression: "#t = :type", // 'type' is a DynamoDB reserved keyword
+      IndexName: "TypeIndex", 
+      KeyConditionExpression: "#t = :type", 
+      FilterExpression: "SK = :sk",
       ExpressionAttributeNames: { "#t": "type" },
       ExpressionAttributeValues: {
         ":type": type,
+        ":sk": "METADATA",
       },
       ScanIndexForward: false,
     });
