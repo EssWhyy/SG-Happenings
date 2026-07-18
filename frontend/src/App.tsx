@@ -1,18 +1,34 @@
 // src/App.tsx
-import { useEffect } from 'react';
+import { useEffect, useState, createContext, useContext } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import LoginPage from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import OneMapSingapore from './pages/Map'; // Import your map component
+import OneMapSingapore from './pages/Map';
+
+const ViewportContext = createContext<{ isMobile: boolean }>({ isMobile: false });
+export const useViewport = () => useContext(ViewportContext);
 
 export default function App() {
   const navigate = useNavigate();
   const auth = useAuth();
 
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const media = window.matchMedia('(max-width: 768px)');
+    setIsMobile(media.matches);
+
+    const listener = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    media.addEventListener('change', listener);
+    
+    return () => media.removeEventListener('change', listener);
+  }, []);
+
   useEffect(() => {
     if (auth.isAuthenticated) {
-      // If they are authenticated and sitting on the login page, push to dashboard
       if (window.location.pathname === '/login') {
         navigate('/dashboard');
       }
@@ -20,54 +36,49 @@ export default function App() {
   }, [auth.isAuthenticated, navigate]);
 
   const handleLogout = () => {
-    // Clear tokens from the oidc-client storage and optionally redirect out of Cognito
     auth.removeUser(); 
     navigate('/login');
   };
 
-  // Prevent routing flickers while the library checks if a session exists in storage
   if (auth.isLoading) {
     return <div className="loading-screen">Loading authentication...</div>;
   }
 
   return (
-    <Routes>
-      {/* Login Route */}
-      <Route 
-        path="/login" 
-        element={
-          !auth.isAuthenticated ? (
-            // empty callback, useEffect above handles post-login navigation automatically.
-            <LoginPage onLogin={() => {}} />
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
-        } 
-      />
+    <ViewportContext.Provider value={{ isMobile }}>
+      <Routes>
+        {/* Login Route */}
+        <Route 
+          path="/login" 
+          element={
+            !auth.isAuthenticated ? (
+              <LoginPage onLogin={() => {}} />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          } 
+        />
 
-      {/* Protected Dashboard Route */}
-      <Route 
-        path="/dashboard" 
-        element={
-          auth.isAuthenticated ? (
-            <Dashboard onLogout={handleLogout} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
+        {/* Protected Dashboard Route */}
+        <Route 
+          path="/dashboard" 
+          element={
+              <Dashboard onLogout={handleLogout} />
+          } 
+        />
 
-      {/* Public Map Route */}
-      <Route 
-        path="/map" 
-        element={<OneMapSingapore />} 
-      />
+        {/* Public Map Route */}
+        <Route 
+          path="/map" 
+          element={<OneMapSingapore />} 
+        />
 
-      {/* Fallback Catch-All */}
-      <Route 
-        path="*" 
-        element={<Navigate to={auth.isAuthenticated ? "/dashboard" : "/login"} replace />} 
-      />
-    </Routes>
+        {/* Fallback Catch-All */}
+        <Route 
+          path="*" 
+          element={<Navigate to={auth.isAuthenticated ? "/dashboard" : "/login"} replace />} 
+        />
+      </Routes>
+    </ViewportContext.Provider>
   );
 }
