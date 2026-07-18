@@ -1,13 +1,15 @@
-import React, { useState } from 'react'; // <-- 1. Import useState
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useState } from 'react'; 
+import { MapContainer, TileLayer, Marker, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 
 import 'leaflet/dist/leaflet.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import { useViewport } from '../App';
 import Header from '../components/Header';
 import MapControls from '../components/MapControls';
+import { MapNodeIcon, MapNodeTooltip } from '../components/MapNode'; 
+import type { Listing } from '../../../shared/apiContract'; 
+import { renderToStaticMarkup } from 'react-dom/server';
 
 const DefaultIcon = L.icon({
   iconUrl: icon,
@@ -18,7 +20,6 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const SG_CENTER: [number, number] = [1.3521, 103.8198];
-const MBS_LOCATION: [number, number] = [1.2834, 103.8607];
 
 const SG_BOUNDS = L.latLngBounds(
   [1.1500, 103.6200],
@@ -26,16 +27,54 @@ const SG_BOUNDS = L.latLngBounds(
 );
 
 export const OneMapSingapore: React.FC = () => {
-  const { isMobile } = useViewport();
   const theme = 'Default';
   
-  // 2. Define the mode state here
   const [addEventMode, setAddEventMode] = useState<boolean>(false); 
+  const [localListings, setLocalListings] = useState<Listing[]>([]);
 
   const toggleAddEventMode = () => {
     setAddEventMode((prev) => !prev);
   };
 
+  const MapClickHandler = () => {
+    useMapEvents({
+      click: (e) => {
+        if (!addEventMode) return;
+
+        const newListing: Listing = {
+          id: Math.random().toString(36).substring(2, 9), 
+          type: 'Event',
+          title: 'New Map Event Location',
+          description: 'A newly created placeholder event.',
+          authorId: 'user_123',
+          latitude: e.latlng.lat,
+          longitude: e.latlng.lng,
+          district: 'Unknown District',
+          createdAt: new Date().toISOString(),
+          expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), 
+        };
+
+        setLocalListings((prev) => [...prev, newListing]);
+        setAddEventMode(false); 
+      },
+    });
+    return null;
+  };
+
+  // Renders ONLY the circular icon markup safely
+  const createCustomIcon = (emoji: string = "📍") => {
+    const htmlString = renderToStaticMarkup(
+      <MapNodeIcon emoji={emoji} />
+    );
+
+    return L.divIcon({
+      html: htmlString,
+      className: "custom-map-node-wrapper",
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+    });
+  };
+  
   const attributionString = `
     <img src="https://www.onemap.gov.sg/web-assets/images/logo/om_logo.png" style="height:20px;width:20px;vertical-align:middle;"/> 
     <a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a>
@@ -44,12 +83,10 @@ export const OneMapSingapore: React.FC = () => {
   return (
     <>
       <style>{`
-        html, body, #root {
-          margin: 0 !important;
-          padding: 0 !important;
-          height: 100% !important;
-          width: 100% !important;
-          overflow: hidden !important;
+        .custom-map-node-wrapper {
+            background: transparent !important;
+            border: none !important;
+            overflow: visible !important;
         }
       `}</style>
 
@@ -62,7 +99,6 @@ export const OneMapSingapore: React.FC = () => {
       }}>
         <Header />
 
-        {/* Optional: Visual Banner informing the user that Add mode is active */}
         {addEventMode && (
           <div style={{
             position: 'absolute',
@@ -86,7 +122,6 @@ export const OneMapSingapore: React.FC = () => {
           position: 'relative'
         }}>
           
-          {/* 3. Pass state and toggle function down as props */}
           <MapControls 
             addEventMode={addEventMode} 
             onToggleAddEventMode={toggleAddEventMode} 
@@ -106,7 +141,6 @@ export const OneMapSingapore: React.FC = () => {
               width: '100%', 
               height: '100%', 
               backgroundColor: '#73b2e6',
-              // Dynamic cursor change to show users they are placing pins
               cursor: addEventMode ? 'crosshair' : 'grab' 
             }} 
           >
@@ -118,11 +152,20 @@ export const OneMapSingapore: React.FC = () => {
               bounds={SG_BOUNDS} 
             />
             
-            <Marker position={MBS_LOCATION}>
-              <Popup>
-                <strong>Marina Bay Sands</strong>
-              </Popup>
-            </Marker>
+            <MapClickHandler />
+
+            {localListings.map((listing) => (
+              <Marker 
+                key={listing.id} 
+                position={[listing.latitude, listing.longitude]} 
+                icon={createCustomIcon('📍')}
+              >
+                {/* Standard React-Leaflet Tooltip handles hover events flawlessly */}
+                <Tooltip direction="top" offset={[0, -10]} opacity={1}>
+                  <MapNodeTooltip listing={listing} authorName="Local User" />
+                </Tooltip>
+              </Marker>
+            ))}
           </MapContainer>
         </div>
       </div>
