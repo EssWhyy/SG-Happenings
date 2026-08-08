@@ -1,7 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, OverlayView, Data } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, OverlayView } from '@react-google-maps/api';
+import TrainIcon from '@mui/icons-material/Train';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import LocalParkIcon from '@mui/icons-material/Park';
+
 import Header from '../components/Header';
 import MapControls from '../components/MapControls';
+import type { OverlayConfig }  from '../components/MapControls';
+import { MrtOverlay } from '../components/overlays/MrtOverlay';
 import { MapNodeIcon, MapNodeTooltip } from '../components/MapNode';
 import type { Listing } from '../../../shared/apiContract';
 
@@ -10,16 +16,12 @@ interface OneMapSingaporeProps {
 }
 
 const SG_CENTER = { lat: 1.3521, lng: 103.8198 };
-
-// Google Maps uses LatLngBoundsLiteral format
 const SG_BOUNDS = {
   north: 1.4700,
   south: 1.1500,
   east: 104.0200,
   west: 103.6200,
 };
-
-const MRT_GEOJSON_URL = '/data/mrtlines.geojson';
 
 const MAP_CONTAINER_STYLE = {
   width: '100%',
@@ -39,8 +41,22 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded })
   const [localListings, setLocalListings] = useState<Listing[]>([]);
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
 
+  // Track state for each active overlay
+  const [activeOverlays, setActiveOverlays] = useState<Record<string, boolean>>({
+    mrt: true,
+    parks: false,
+    food: false,
+  });
+
   const toggleAddEventMode = () => {
     setAddEventMode((prev) => !prev);
+  };
+
+  const handleToggleOverlay = (id: string) => {
+    setActiveOverlays((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
   const handleMapClick = useCallback(
@@ -70,28 +86,30 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded })
     [addEventMode, onNodeAdded]
   );
 
-  // Styling function for the MRT GeoJSON Data layer
-  const onDataLoad = useCallback((data: google.maps.Data) => {
-    data.loadGeoJson(MRT_GEOJSON_URL);
-    data.setStyle((feature: google.maps.Data.Feature): google.maps.Data.StyleOptions => {
-      const rawColor = feature.getProperty('color');
-      const strokeColor = typeof rawColor === 'string' ? rawColor : '#ff3366';
+  // Configuration passed to MapControls
+  const overlayConfigs: OverlayConfig[] = [
+    {
+      id: 'mrt',
+      name: 'MRT Lines',
+      icon: <TrainIcon />,
+      active: activeOverlays.mrt,
+    },
+    {
+      id: 'parks',
+      name: 'Parks & Nature',
+      icon: <LocalParkIcon />,
+      active: activeOverlays.parks,
+    },
+    {
+      id: 'food',
+      name: 'Food & Dining',
+      icon: <RestaurantIcon />,
+      active: activeOverlays.food,
+    },
+  ];
 
-      return {
-        strokeColor,
-        strokeWeight: 4,
-        strokeOpacity: 0.85,
-      };
-    });
-  }, []);
-
-  if (loadError) {
-    return <div>Error loading Google Maps API</div>;
-  }
-
-  if (!isLoaded) {
-    return <div>Loading Map...</div>;
-  }
+  if (loadError) return <div>Error loading Google Maps API</div>;
+  if (!isLoaded) return <div>Loading Map...</div>;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
@@ -117,7 +135,12 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded })
       )}
 
       <div style={{ width: '100%', height: 'calc(100vh - 50px)', position: 'relative' }}>
-        <MapControls addEventMode={addEventMode} onToggleAddEventMode={toggleAddEventMode} />
+        <MapControls
+          addEventMode={addEventMode}
+          onToggleAddEventMode={toggleAddEventMode}
+          overlays={overlayConfigs}
+          onToggleOverlay={handleToggleOverlay}
+        />
 
         <GoogleMap
           mapContainerStyle={MAP_CONTAINER_STYLE}
@@ -137,8 +160,8 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded })
             zoomControl: true,
           }}
         >
-          {/* GeoJSON layer for Singapore MRT Network */}
-          <Data onLoad={onDataLoad} />
+          {/* Render overlay conditionally based on active state */}
+          {activeOverlays.mrt && <MrtOverlay />}
 
           {/* Render Markers & Custom Tooltips */}
           {localListings.map((listing) => (

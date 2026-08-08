@@ -1,36 +1,39 @@
 import React, { useState } from 'react';
-import { Box, Fab, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
+import { Box, Fab, SpeedDial, SpeedDialAction, SpeedDialIcon, Badge } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close'; // Useful to show an 'X' when active
+import CloseIcon from '@mui/icons-material/Close';
+import TrainIcon from '@mui/icons-material/Train';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalParkIcon from '@mui/icons-material/Park';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 
-const filterActions = [
-  { icon: <RestaurantIcon />, name: 'Food & Dining', id: 'food' },
-  { icon: <LocalParkIcon />, name: 'Parks & Nature', id: 'parks' },
-  { icon: <ShoppingBagIcon />, name: 'Shopping', id: 'shopping' },
-];
+export interface OverlayConfig {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  active: boolean;
+}
 
 interface MapControlsProps {
   addEventMode: boolean;
   onToggleAddEventMode: () => void;
+  overlays: OverlayConfig[];
+  onToggleOverlay: (id: string) => void;
 }
 
 export const MapControls: React.FC<MapControlsProps> = ({ 
   addEventMode, 
-  onToggleAddEventMode 
+  onToggleAddEventMode,
+  overlays,
+  onToggleOverlay,
 }) => {
   const [open, setOpen] = useState(false);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const handleFilterClick = (id: string) => {
-    console.log(`Filter clicked: ${id}`);
-    handleClose();
-  };
+  const activeOverlayCount = overlays.filter((o) => o.active).length;
 
   return (
     <Box
@@ -44,10 +47,14 @@ export const MapControls: React.FC<MapControlsProps> = ({
         gap: 2,
       }}
     >
-      {/* Filter Expandable Button */}
+      {/* Dynamic Extensible Overlays SpeedDial */}
       <SpeedDial
-        ariaLabel="Map Filters"
-        icon={<SpeedDialIcon icon={<FilterListIcon />} />}
+        ariaLabel="Map Overlays"
+        icon={
+          <Badge badgeContent={activeOverlayCount} color="error">
+            <SpeedDialIcon icon={<FilterListIcon />} />
+          </Badge>
+        }
         onClose={handleClose}
         onOpen={handleOpen}
         open={open}
@@ -57,23 +64,30 @@ export const MapControls: React.FC<MapControlsProps> = ({
           size: 'medium',
         }}
       >
-        {filterActions.map((action) => (
-          <SpeedDialAction
-            key={action.id}
-            icon={action.icon}
-            slotProps={{
-                tooltip: {
-                title: action.name,
-                },
-            }}
-            onClick={() => handleFilterClick(action.id)}
-          />
-        ))}
+      {overlays.map((overlay) => (
+        <SpeedDialAction
+          key={overlay.id}
+          icon={overlay.icon}
+          slotProps={{
+            tooltip: {
+              title: `${overlay.active ? 'Hide' : 'Show'} ${overlay.name}`,
+            },
+          }}
+          onClick={() => onToggleOverlay(overlay.id)}
+          sx={{
+            backgroundColor: overlay.active ? 'primary.light' : 'background.paper',
+            color: overlay.active ? 'primary.contrastText' : 'text.primary',
+            '&:hover': {
+              backgroundColor: overlay.active ? 'primary.main' : 'action.hover',
+            },
+          }}
+        />
+      ))}
       </SpeedDial>
 
       {/* Dynamic Add Button */}
       <Fab 
-        color={addEventMode ? 'error' : 'secondary'} // Turns red when active
+        color={addEventMode ? 'error' : 'secondary'}
         size="medium" 
         aria-label="add location"
         onClick={onToggleAddEventMode}
