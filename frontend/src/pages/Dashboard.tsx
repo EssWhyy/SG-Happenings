@@ -4,9 +4,11 @@ import type { CreateListingRequest, CreateEditListingResponse, Listing } from '.
 
 interface DashboardProps {
   onLogout: () => void;
+  pendingCoords: { lat: number; lng: number } | null;
+  onSuccess?: () => void;
 }
 
-export default function Dashboard({ onLogout }: DashboardProps) {
+export default function Dashboard({ onLogout, pendingCoords, onSuccess }: DashboardProps) {
   const backendUrl = import.meta.env.VITE_API_URL;
   const auth = useAuth();
 
@@ -74,6 +76,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     if (!title || !contact) return alert("Please fill out Title and Contact!");
     if (!cognitoUserId) return alert("Not authenticated via Cognito.");
 
+    // Dynamic latitude/longitude assignment from the map selection
+    const latitude = pendingCoords ? pendingCoords.lat : 1.3521;
+    const longitude = pendingCoords ? pendingCoords.lng : 103.8198;
+
     if (editingListingId) {
       // Update Existing Listing (PUT)
       try {
@@ -115,8 +121,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         district,
         description,
         authorId: cognitoUserId,
-        latitude: 1.3521,
-        longitude: 103.8198,
+        latitude,
+        longitude,
       };
 
       try {
@@ -133,6 +139,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           setListings((prev) => [...prev, data.listing]);
           clearListingForm();
           alert(`Success! Created listing with ID: ${data.id}`);
+          if (onSuccess) onSuccess(); // Closes the right side drawer
         }
       } catch (err) {
         console.error(err);
