@@ -12,7 +12,9 @@ import { MapNodeIcon, MapNodeTooltip } from '../components/MapNode';
 import type { Listing } from '../../../shared/apiContract';
 
 interface OneMapSingaporeProps {
+  listings: Listing[];
   onNodeAdded: (lat: number, lng: number) => void;
+  pendingCoords: { lat: number; lng: number } | null;
 }
 
 const SG_CENTER = { lat: 1.3521, lng: 103.8198 };
@@ -31,17 +33,15 @@ const MAP_CONTAINER_STYLE = {
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
-export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded }) => {
+export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, onNodeAdded, pendingCoords }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
 
   const [addEventMode, setAddEventMode] = useState<boolean>(false);
-  const [localListings, setLocalListings] = useState<Listing[]>([]);
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
 
-  // Track state for each active overlay
   const [activeOverlays, setActiveOverlays] = useState<Record<string, boolean>>({
     mrt: true,
     parks: false,
@@ -49,6 +49,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded })
   });
 
   const toggleAddEventMode = () => {
+    console.log('[Map] Toggling add event mode:', !addEventMode);
     setAddEventMode((prev) => !prev);
   };
 
@@ -66,51 +67,27 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded })
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
 
-      const newListing: Listing = {
-        id: Math.random().toString(36).substring(2, 9),
-        type: 'Event',
-        title: 'New Map Event Location',
-        description: 'A newly created placeholder event.',
-        authorId: 'user_123',
-        latitude: lat,
-        longitude: lng,
-        district: 'Unknown District',
-        createdAt: new Date().toISOString(),
-        expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      };
-
-      setLocalListings((prev) => [...prev, newListing]);
+      console.log('[Map] Map clicked at coords:', { lat, lng });
       onNodeAdded(lat, lng);
       setAddEventMode(false);
     },
     [addEventMode, onNodeAdded]
   );
 
-  // Configuration passed to MapControls
   const overlayConfigs: OverlayConfig[] = [
-    {
-      id: 'mrt',
-      name: 'MRT Lines',
-      icon: <TrainIcon />,
-      active: activeOverlays.mrt,
-    },
-    {
-      id: 'parks',
-      name: 'Parks & Nature',
-      icon: <LocalParkIcon />,
-      active: activeOverlays.parks,
-    },
-    {
-      id: 'food',
-      name: 'Food & Dining',
-      icon: <RestaurantIcon />,
-      active: activeOverlays.food,
-    },
+    { id: 'mrt', name: 'MRT Lines', icon: <TrainIcon />, active: activeOverlays.mrt },
+    { id: 'parks', name: 'Parks & Nature', icon: <LocalParkIcon />, active: activeOverlays.parks },
+    { id: 'food', name: 'Food & Dining', icon: <RestaurantIcon />, active: activeOverlays.food },
   ];
 
   if (loadError) return <div>Error loading Google Maps API</div>;
   if (!isLoaded) return <div>Loading Map...</div>;
 
+  console.log('[Map] Rendering map with total persisted listings:', listings.length);
+  console.log('[Map Debug] Current state:', {
+    listingsCount: listings.length,
+    pendingCoords: pendingCoords
+  });
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
       <Header />
@@ -148,10 +125,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded })
           zoom={13}
           onClick={handleMapClick}
           options={{
-            restriction: {
-              latLngBounds: SG_BOUNDS,
-              strictBounds: true,
-            },
+            restriction: { latLngBounds: SG_BOUNDS, strictBounds: true },
             minZoom: 12.8,
             maxZoom: 18,
             draggableCursor: addEventMode ? 'crosshair' : undefined,
@@ -160,11 +134,10 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded })
             zoomControl: true,
           }}
         >
-          {/* Render overlay conditionally based on active state */}
           {activeOverlays.mrt && <MrtOverlay />}
 
-          {/* Render Markers & Custom Tooltips */}
-          {localListings.map((listing) => (
+          {/* Render Saved Permanent Listings from DynamoDB */}
+          {listings.map((listing) => (
             <React.Fragment key={listing.id}>
               <OverlayView
                 position={{ lat: listing.latitude, lng: listing.longitude }}
@@ -197,6 +170,22 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ onNodeAdded })
               )}
             </React.Fragment>
           ))}
+
+          {/* Render Uncommitted Pending Draft Node */}
+          {pendingCoords && pendingCoords.lat && pendingCoords.lng && (
+            <OverlayView
+              position={{ lat: pendingCoords.lat, lng: pendingCoords.lng }}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+              getPixelPositionOffset={(width, height) => ({
+                x: -(width / 2),
+                y: -(height / 2),
+              })}
+            >
+              <div style={{ cursor: 'pointer', opacity: 0.8 }}>
+                <MapNodeIcon emoji="📍" />
+              </div>
+            </OverlayView>
+          )}
         </GoogleMap>
       </div>
     </div>
