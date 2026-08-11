@@ -17,6 +17,7 @@ export interface Listing {
   id: string;
   type: string;
   title: string;
+  emoji?: string;
   description?: string;
   authorId: string; // user who made the listing
   image?: string; // id or string linked to S3 item
@@ -36,6 +37,7 @@ export interface Listing {
 export interface CreateListingRequest {
   type: string;
   title: string;
+  emoji?: string;
   description?: string;
   authorId: string; 
   image?: string;

@@ -141,6 +141,7 @@ app.put('/api/listings/:listingId', async (req: Request, res: Response) => {
       ...body,
       id: listingId,
       image: body.image ?? "",
+      emoji: body.emoji || "📍",
       createdAt: body.createdAt || new Date().toISOString() 
     };
 
@@ -175,6 +176,7 @@ app.post('/api/listings', async (req: Request, res: Response) => {
       id: `list_${Math.random().toString(36).substring(2, 9)}`,
       type: body.type || "Unknown Type",
       title: body.title || "No Title Provided",
+      emoji: body.emoji || "📍",
       description: body.description ?? "",
       contact: body.contact || "No Contact Provided",
       authorId: body.authorId || "usr_anonymous",

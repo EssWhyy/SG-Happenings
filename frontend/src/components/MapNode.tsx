@@ -3,6 +3,8 @@ import React from 'react';
 export interface MapNodeProps {
   listing: {
     title: string;
+    type?: string;
+    emoji?: string;
     expiryDate: string;
     [key: string]: any;
   };
@@ -10,21 +12,34 @@ export interface MapNodeProps {
   emoji?: string;
 }
 
-// 1. The visual marker icon (The Circle)
-export const MapNodeIcon: React.FC<{ emoji?: string }> = ({ emoji = "📍" }) => {
+
+const TYPE_COLORS: Record<string, string> = {
+  Sale: '#23cc93',    // Green
+  Event: '#8aade5',   // Blue
+  Wanted: '#eeb85c',  // Amber
+  Default: '#ffffff',
+};
+
+
+export const MapNodeIcon: React.FC<{ emoji?: string; type?: string }> = ({ 
+  emoji = "📍", 
+  type = "Default" 
+}) => {
+  const backgroundColor = TYPE_COLORS[type] || TYPE_COLORS.Default;
+
   return (
     <div
       style={{
         width: '40px',
         height: '40px',
-        backgroundColor: '#ffffff',
+        backgroundColor,
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '20px',
         boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
-        border: '2px solid #4f46e5',
+        border: '2px solid #ffffff',
         boxSizing: 'border-box',
       }}
     >
@@ -33,7 +48,7 @@ export const MapNodeIcon: React.FC<{ emoji?: string }> = ({ emoji = "📍" }) =>
   );
 };
 
-// 2. The hover tooltip content
+
 export const MapNodeTooltip: React.FC<MapNodeProps> = ({
   listing,
   authorName,
