@@ -540,12 +540,58 @@ export default function Dashboard({
         </div>
       )}
 
-      {/* 3. VIEW STATE PLACEHOLDER */}
-      {view === 'view' && (
-        <div className="view-listing-wrapper">
-          {/* View state layout to be implemented next */}
-        </div>
-      )}
+    {/* 3. VIEW STATE */}
+    {view === 'view' && (
+      <div className="view-listing-wrapper">
+        {selectedListing ? (
+          <div className="view-listing-card">
+            <div className="view-header">
+              <h2>{selectedListing.emoji} {selectedListing.title}</h2>
+              <button type="button" onClick={handleCancelOrClose} className="btn-close">
+                ✕
+              </button>
+            </div>
+
+            {selectedListing.image && (
+              <div className="view-image-container">
+                <img 
+                  src={selectedListing.image} 
+                  alt={selectedListing.title} 
+                  style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '8px' }} 
+                />
+              </div>
+            )}
+
+            <div className="view-details" style={{ marginTop: '1rem' }}>
+              <p><strong>Type:</strong> <span className="badge">{selectedListing.type}</span></p>
+              <p><strong>District:</strong> {selectedListing.district}</p>
+              <p><strong>Contact:</strong> {selectedListing.contact}</p>
+              <p><strong>Description:</strong> {selectedListing.description}</p>
+              <p><strong>Author ID:</strong> {selectedListing.authorId}</p>
+              {selectedListing.expiryDate && (
+                <p><strong>Expires:</strong> {new Date(selectedListing.expiryDate).toLocaleDateString()}</p>
+              )}
+            </div>
+
+            <div className="view-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
+              {selectedListing.authorId === cognitoUserId && (
+                <button 
+                  className="btn-edit" 
+                  onClick={() => onEditListing && onEditListing(selectedListing)}
+                >
+                  ✏️ Edit Listing
+                </button>
+              )}
+              <button className="btn-cancel" onClick={handleCancelOrClose}>
+                Back
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="empty-list-notice">No listing selected.</p>
+        )}
+      </div>
+    )}
     </div>
   );
 }

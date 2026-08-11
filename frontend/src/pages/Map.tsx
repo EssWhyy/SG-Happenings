@@ -13,8 +13,9 @@ import type { Listing } from '../../../shared/apiContract';
 
 interface OneMapSingaporeProps {
   listings: Listing[];
-  onNodeAdded: (lat: number, lng: number) => void;
   pendingCoords: { lat: number; lng: number } | null;
+  onNodeAdded: (lat: number, lng: number) => void;
+  onNodeClick: (listingId: string) => void;
 }
 
 const SG_CENTER = { lat: 1.3521, lng: 103.8198 };
@@ -33,7 +34,7 @@ const MAP_CONTAINER_STYLE = {
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
-export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, onNodeAdded, pendingCoords }) => {
+export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pendingCoords, onNodeAdded, onNodeClick }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -149,6 +150,10 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, onNo
               >
                 <div
                   style={{ cursor: 'pointer', fontSize: '24px' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNodeClick(listing.id); // <--- Trigger backend fetch callback
+                  }}
                   onMouseEnter={() => setHoveredListingId(listing.id)}
                   onMouseLeave={() => setHoveredListingId(null)}
                 >

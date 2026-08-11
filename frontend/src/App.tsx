@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import LoginPage from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import type { DashboardView } from './pages/Dashboard';
 import OneMapSingapore from './pages/Map';
 import type { Listing } from '../../shared/apiContract';
 
@@ -23,6 +24,10 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [pendingCoords, setPendingCoords] = useState<Coordinates | null>(null);
   
+  // Dashboard view and selection state
+  const [dashboardView, setDashboardView] = useState<DashboardView>('bookmark');
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+
   // Lift listings state so both Map and Dashboard share DynamoDB data
   const [listings, setListings] = useState<Listing[]>([]);
 
@@ -44,28 +49,73 @@ export default function App() {
     fetchListings();
   }, [backendUrl]);
 
-  // Triggered when a node is added to the map
+  // 2. Triggered when a new node placement is initiated on the map (Create Mode)
   const handleNodeAddedOnMap = (lat: number, lng: number) => {
-    console.log('[App] Node clicked on map at:', { lat, lng });
+    console.log('[App] New node location clicked on map at:', { lat, lng });
+    setSelectedListing(null);
     setPendingCoords({ lat, lng });
+    setDashboardView('create_edit');
     setIsSidebarOpen(true);
   };
 
-  // Clears pending coordinates so temporary marker disappears
+  // 3. Triggered when an existing node on the map is clicked (View Mode)
+  const handleMapNodeClick = async (listingId: string) => {
+    try {
+      console.log(`[App] Fetching listing details for ID: ${listingId}`);
+      const res = await fetch(`${backendUrl}/api/listings/${listingId}`);
+      if (!res.ok) throw new Error('Failed to fetch listing data from backend');
+      
+      const data: Listing = await res.json();
+      setSelectedListing(data);
+      setPendingCoords(null);
+      setDashboardView('view');
+      setIsSidebarOpen(true);
+    } catch (err) {
+      console.error('[App] Error loading listing node:', err);
+      alert('Could not load details for this location.');
+    }
+  };
+
+  // 4. Triggered when clicking an Edit button inside View mode or Bookmark list
+  const handleEditListing = (listing: Listing) => {
+    setSelectedListing(listing);
+    setPendingCoords(null);
+    setDashboardView('create_edit');
+    setIsSidebarOpen(true);
+  };
+
+  // 5. Triggered when selecting a card from the Bookmark listing
+  const handleSelectListing = (listing: Listing) => {
+    setSelectedListing(listing);
+    setDashboardView('view');
+  };
+
+  // Clears pending coordinates and selection state
   const handleCloseSidebar = () => {
     console.log('[App] Closing sidebar / resetting draft coordinates.');
     setPendingCoords(null);
+    setSelectedListing(null);
     setIsSidebarOpen(false);
   };
 
-  // 2. Add new listing to state upon successful deployment so it persists on the map
+  // Add/update listing to state upon successful deployment so it persists on the map
   const handleDeploySuccess = (newListing?: Listing) => {
     console.log('[App] Listing successfully deployed to DynamoDB:', newListing);
     if (newListing) {
-      setListings((prev) => [...prev, newListing]);
+      setListings((prev) => {
+        const index = prev.findIndex((item) => item.id === newListing.id);
+        if (index !== -1) {
+          const updated = [...prev];
+          updated[index] = newListing;
+          return updated;
+        }
+        return [...prev, newListing];
+      });
+      setSelectedListing(newListing);
+      setDashboardView('view');
     } else {
-      // Re-sync from DB if payload isn't passed directly
       fetchListings();
+      setIsSidebarOpen(false);
     }
     setPendingCoords(null);
   };
@@ -85,7 +135,7 @@ export default function App() {
   useEffect(() => {
     if (auth.isAuthenticated) {
       if (window.location.pathname === '/login') {
-        navigate('/dashboard');
+        navigate('/');
       }
     }
   }, [auth.isAuthenticated, navigate]);
@@ -112,16 +162,17 @@ export default function App() {
           element={
             <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
               
-              {/* Main Map Workspace - Passes listings to Map */}
+              {/* Main Map Workspace */}
               <div style={{ flex: 1, height: '100%', position: 'relative' }}>
                 <OneMapSingapore 
                   listings={listings}
                   onNodeAdded={handleNodeAddedOnMap} 
+                  onNodeClick={handleMapNodeClick}
                   pendingCoords={pendingCoords} 
                 />
               </div>
 
-              {/* Dashboard Panel */}
+              {/* Dashboard Side Panel */}
               {isSidebarOpen && (
                 <div style={{
                   width: isMobile ? '100%' : '450px',
@@ -134,20 +185,13 @@ export default function App() {
                   right: 0,
                   transition: 'all 0.3s ease'
                 }}>
-                  <button 
-                    onClick={handleCloseSidebar}
-                    style={{ 
-                      position: 'absolute', top: '1rem', left: '1rem', zIndex: 10,
-                      background: '#555', color: '#fff', border: 'none', borderRadius: '4px', 
-                      cursor: 'pointer', padding: '0.4rem 0.8rem', fontSize: '0.85rem' 
-                    }}
-                  >
-                    ✕ Close
-                  </button>
-                  
                   <Dashboard 
+                    view={dashboardView}
                     listings={listings}
                     setListings={setListings}
+                    selectedListing={selectedListing}
+                    onSelectListing={handleSelectListing}
+                    onEditListing={handleEditListing}
                     onLogout={handleLogout} 
                     pendingCoords={pendingCoords}
                     onSuccess={handleDeploySuccess}
