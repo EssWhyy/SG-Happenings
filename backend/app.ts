@@ -1,4 +1,5 @@
 // backend/app.ts
+import 'dotenv/config';
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express'; 
 import cors from 'cors';
@@ -7,9 +8,22 @@ import serverlessExpress from '@codegenie/serverless-express';
 import { mockDb } from './db';
 import type { CreateListingRequest, CreateEditListingResponse, Listing, User } from '../shared/apiContract';
 
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+const s3Client = new S3Client({ region: process.env.AWS_REGION || 'ap-southeast-1' });
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'sg-happenings-s3';
+const rawCdnUrl = process.env.CLOUDFRONT_URL || 'https://d2yx0dms1vpwng.cloudfront.net';
+const CLOUDFRONT_URL = rawCdnUrl.replace(/\/+$/, '');
+
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Main request handler
@@ -23,7 +37,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   next();
 });
-
 
 // GET ROUTE: Fetch all users or master listings
 app.get('/api/debug/users', async (req: Request, res: Response) => {
@@ -76,12 +89,10 @@ app.post('/api/users', async (req: Request, res: Response) => {
     console.log("Incoming Create User Body:", req.body);
     const body = req.body || {};
 
-    // Validate email and name presence
     if (!body.email || !body.name) {
       return res.status(400).json({ success: false, error: "Name and Email are required" });
     }
 
-    // Build user object strictly adhering to your User interface
     const newUser: User = {
       id: body.id || `usr_${Math.random().toString(36).substring(2, 9)}`,
       name: body.name,
@@ -106,8 +117,6 @@ app.post('/api/users', async (req: Request, res: Response) => {
 });
 
 // AP2: Create, Update, and Delete Listing 
-// POST: Create new listing using NoSQL transactional replication pattern
-
 app.get('/api/listings/:listingId', async (req: Request, res: Response) => {
   try {
     const listingId = req.params.listingId as string;
@@ -123,37 +132,28 @@ app.get('/api/listings/:listingId', async (req: Request, res: Response) => {
   }
 });
 
-
-
 app.put('/api/listings/:listingId', async (req: Request, res: Response) => {
   try {
     const { listingId } = req.params;
     const body = req.body;
 
-    // Ensure we are targeted at the correct listing ID
     const updatedListing: Listing = {
       ...body,
-      id: listingId, 
-      // Keep original timestamp if passed, or fallback to current
+      id: listingId,
+      image: body.image ?? "",
       createdAt: body.createdAt || new Date().toISOString() 
     };
 
     const savedListing = await mockDb.updateListing(updatedListing);
-
-    res.json({
-      success: true,
-      id: savedListing.id,
-      listing: savedListing
-    });
+    res.json({ success: true, id: savedListing.id, listing: savedListing });
   } catch (error) {
-    console.error("Update Route Error:", error);
     res.status(500).json({ success: false, error: "Failed to update listing" });
   }
 });
 
 app.delete('/api/listings/:listingId', async (req: Request, res: Response) => {
   try {
-    const { authorId } = req.body; // The frontend must provide who is deleting it to clean up the user history record
+    const { authorId } = req.body;
     const listingId = req.params.listingId as string;
 
     if (!authorId) return res.status(400).json({ error: "authorId is required to delete" });
@@ -164,7 +164,6 @@ app.delete('/api/listings/:listingId', async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "Failed to delete listing" });
   }
 });
-
 
 app.post('/api/listings', async (req: Request, res: Response) => {
   try {
@@ -183,11 +182,10 @@ app.post('/api/listings', async (req: Request, res: Response) => {
       latitude: body.latitude || 0,   
       longitude: body.longitude || 0,
       district: body.district || "",
-      createdAt: new Date().toISOString(), // Ensure Uniqueness of NoSQL records
+      createdAt: new Date().toISOString(),
       expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     };
 
-    // This creates BOTH main table records under the hood
     const savedListing = await mockDb.saveListing(newListing);
 
     const responsePayload: CreateEditListingResponse = {
@@ -202,10 +200,10 @@ app.post('/api/listings', async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "Failed to create listing" });
   }
 });
+
 // AP3: Fetch all listings created by a specific user
 app.get('/api/users/:userId/listings', async (req: Request, res: Response) => {
   const userId = req.params.userId as string;
-  
   const listings = await mockDb.getListingsByUser(userId);
   res.json(listings);
 });
@@ -224,5 +222,31 @@ app.get('/api/listings/type/:type', async (req: Request, res: Response) => {
   res.json(listings);
 });
 
+// S3 Upload Presigned URL Generator
+app.post('/api/s3/presigned-url', async (req: Request, res: Response) => {
+  try {
+    const { fileType } = req.body;
+    if (!fileType || !fileType.startsWith('image/')) {
+      return res.status(400).json({ error: 'Only image files are allowed.' });
+    }
+
+    const extension = fileType.split('/')[1] || 'jpeg';
+    const key = `listings/img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${extension}`;
+
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      ContentType: fileType,
+    });
+
+    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+    const cdnUrl = `${CLOUDFRONT_URL}/${key}`;
+
+    res.json({ uploadUrl, cdnUrl });
+  } catch (err) {
+    console.error('Presigned URL generation error:', err);
+    res.status(500).json({ error: 'Failed to generate upload URL' });
+  }
+});
 
 export const handler = serverlessExpress({ app });

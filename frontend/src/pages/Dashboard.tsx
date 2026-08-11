@@ -38,6 +38,11 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
   const [district, setDistrict] = useState('Central');
   const [description, setDescription] = useState('');
 
+  // File Upload state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string>('');
+
   const fetchUsers = async () => {
     try {
       const res = await fetch(`${backendUrl}/api/debug/users`);
@@ -85,7 +90,6 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
   const handleSubmitListing = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !contact) return alert("Please fill out Title and Contact!");
-
     if (!editingListingId && !pendingCoords) {
       return alert("Please select a location on the map before creating a listing.");
     }
@@ -94,11 +98,20 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
     const latitude = pendingCoords ? pendingCoords.lat : (currentListing?.latitude ?? 1.3521);
     const longitude = pendingCoords ? pendingCoords.lng : (currentListing?.longitude ?? 103.8198);
 
-    if (editingListingId) {
-      try {
+    try {
+      setStatusMessage('Deploying image to S3/CloudFront...');
+      
+      // Defer deployment to S3/CloudFront until submit is triggered
+      let imageUrl = existingImageUrl;
+      if (selectedFile) {
+        imageUrl = await uploadImageToS3(selectedFile);
+      }
+
+      if (editingListingId) {
         const payload = {
           title, type, contact, district, description,
-          authorId: cognitoUserId, latitude, longitude
+          authorId: cognitoUserId, latitude, longitude,
+          image: imageUrl
         };
 
         const response = await fetch(`${backendUrl}/api/listings/${editingListingId}`, {
@@ -115,17 +128,13 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
           clearListingForm();
           alert('Listing updated successfully!');
         }
-      } catch (err) {
-        console.error('[Dashboard] Update error:', err);
-        alert('Error updating listing.');
-      }
-    } else {
-      const payload: CreateListingRequest = {
-        title, type, contact, district, description,
-        authorId: cognitoUserId, latitude, longitude,
-      };
+      } else {
+        const payload: CreateListingRequest = {
+          title, type, contact, district, description,
+          authorId: cognitoUserId, latitude, longitude,
+          image: imageUrl
+        };
 
-      try {
         const response = await fetch(`${backendUrl}/api/listings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -140,12 +149,15 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
           alert(`Success! Created listing with ID: ${data.id}`);
           if (onSuccess) onSuccess(data.listing);
         }
-      } catch (err) {
-        console.error('[Dashboard] Deploy error:', err);
-        alert('Error saving listing to AWS.');
       }
+    } catch (err) {
+      console.error('[Dashboard] Deploy error:', err);
+      alert('Error saving listing or uploading image to AWS.');
+    } finally {
+      setStatusMessage('Listings synced successfully with AWS backend.');
     }
   };
+
 
   const handleDeleteListing = async (listingId: string, authorId: string) => {
     if (!confirm("Are you sure you want to delete this listing?")) return;
@@ -180,6 +192,50 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
     }
   };
 
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate File Type (Image only)
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (PNG, JPG, WEBP, etc.).');
+      e.target.value = '';
+      return;
+    }
+
+    // Validate File Size (Max 5MB = 5 * 1024 * 1024 bytes)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert('File size exceeds the 5 MB limit.');
+      e.target.value = '';
+      return;
+    }
+
+    setSelectedFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const uploadImageToS3 = async (file: File): Promise<string> => {
+    const res = await fetch(`${backendUrl}/api/s3/presigned-url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileType: file.type }),
+    });
+
+    if (!res.ok) throw new Error('Failed to obtain presigned upload URL.');
+    const { uploadUrl, cdnUrl } = await res.json();
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file,
+  });
+
+  if (!uploadRes.ok) throw new Error('Failed to upload file to S3.');
+  return cdnUrl;
+};
+
   const startEditListing = (item: Listing) => {
     setEditingListingId(item.id);
     setTitle(item.title);
@@ -187,6 +243,9 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
     setContact(item.contact || '');
     setDistrict(item.district || 'Central');
     setDescription(item.description || '');
+    setExistingImageUrl(item.image || '');
+    setImagePreview(item.image || null);
+    setSelectedFile(null);
   };
 
   const clearListingForm = () => {
@@ -194,6 +253,9 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
     setTitle('');
     setContact('');
     setDescription('');
+    setSelectedFile(null);
+    setImagePreview(null);
+    setExistingImageUrl('');
   };
 
   const handleCancelOrClose = () => {
@@ -295,6 +357,22 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
                 </button>
               </div>
               
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                Listing Image (Max 5MB):
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleFileChange} 
+                  style={{ padding: '0.5rem', backgroundColor: '#333', color: 'white', border: '1px solid #555' }} 
+                />
+              </label>
+
+              {imagePreview && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <img src={imagePreview} alt="Preview" style={{ width: '100%', maxHeight: '150px', objectFit: 'cover', borderRadius: '4px' }} />
+                </div>
+              )}
+
               <label className="form-field">
                 Title:
                 <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -346,6 +424,7 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
                 <p className="empty-list-notice">No listings return for this operational query parameters.</p>
               ) : (
                 listings.map((item) => (
+                  
                   <div key={item.id} className={`listing-card ${item.authorId === cognitoUserId ? 'is-owner' : ''}`}>
                     <div className="card-header">
                       <h4>
@@ -356,6 +435,15 @@ export default function Dashboard({ listings, setListings, onLogout, pendingCoor
                         <button onClick={() => handleDeleteListing(item.id, item.authorId)} className="btn-delete">Delete</button>
                       </div>
                     </div>
+                    {/* Display image inside the card if present */}
+                    {item.image && (
+                      <img 
+                        src={item.image} 
+                        alt={item.title} 
+                        style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '4px', margin: '0.5rem 0' }} 
+                      />
+                    )}
+
                     <p className="card-description">{item.description}</p>
                     <p className="card-contact">Contact: {item.contact}</p>
                     <small className="card-meta">ID: {item.id} | Author: {item.authorId}</small>

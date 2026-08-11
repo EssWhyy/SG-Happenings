@@ -7,7 +7,9 @@ provider:
   # 1. Environment variables available to your code via process.env
   environment:
     DYNAMODB_TABLE_NAME: ${self:service}-listings-${sls:stage}
-  # 2. Grant permissions to your Lambda function to talk to DynamoDB
+    S3_BUCKET_NAME: sg-happenings-s3
+    CLOUDFRONT_URL: https://d2yx0dms1vpwng.cloudfront.net
+  # 2. Grant permissions to your Lambda function to talk to DynamoDB and S3
   iam:
     role:
       statements:
@@ -22,6 +24,13 @@ provider:
           Resource:
             - Fn::GetAtt: [ ListingsTable, Arn ]
             - Fn::Join: [ '/', [ { Fn::GetAtt: [ ListingsTable, Arn ] }, 'index', '*' ] ]
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
+          Resource:
+            - "arn:aws:s3:::sg-happenings-s3/*"
 
 build:
   esbuild:
