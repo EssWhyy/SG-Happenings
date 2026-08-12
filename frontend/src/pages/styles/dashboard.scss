@@ -1,34 +1,40 @@
 // Variables
-$bg-main: #242424;
-$bg-card: #1a1a1a;
-$bg-input: #333333;
-$primary: #646cff;
-$danger: #ff6b6b;
-$success: #4cd137;
+$bg-main: #ffffff;
+$bg-card: #f8fafc;
+$bg-input: #ffffff;
+$primary: #2563eb;
+$danger: #ef4444;
+$success: #10b981;
 $text-light: #ffffff;
-$text-muted: #aaaaaa;
-$text-secondary: #cccccc;
-$border-color: #333333;
-$border-input: #555555;
+$text-dark: #0f172a;
+$text-muted: #64748b;
+$text-secondary: #475569;
+$border-color: #e2e8f0;
+$border-input: #cbd5e1;
 
 .dashboard-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  width: 100%;
+  height: 100vh;
   min-height: 100vh;
   background-color: $bg-main;
-  color: $text-light;
-  font-family: sans-serif;
-  padding: 2rem;
+  color: $text-dark;
+  font-family: inherit;
+  padding: 0;
   position: relative;
+  overflow-y: auto;
+  box-sizing: border-box;
 
   .dashboard-title {
     color: $primary;
     margin-bottom: 0.5rem;
+    padding: 0 1.5rem;
   }
 
   .status-message {
-    margin-bottom: 1.5rem;
+    margin: 0 1.5rem 1.5rem 1.5rem;
 
     &.status-failed {
       color: $danger;
@@ -39,58 +45,79 @@ $border-input: #555555;
     }
   }
 
-  // Header User Info & Logout
+  // Header User Info & Logout (Pinned clean bar)
   .dashboard-header-auth {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
+    position: relative;
+    top: 0;
+    right: 0;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    background-color: #0f172a;
+    border-bottom: 1px solid #1e293b;
+    z-index: 10;
+    flex-shrink: 0;
 
     .user-info {
-      text-align: right;
+      text-align: left;
       font-size: 0.85rem;
 
       .user-label {
-        color: $text-muted;
+        color: #94a3b8;
+        font-size: 0.75rem;
+        display: block;
       }
 
       .user-email {
-        font-weight: bold;
-        color: $success;
+        font-weight: 600;
+        color: #38bdf8;
       }
     }
 
     .btn-logout {
       background: $danger;
       color: $text-light;
-      padding: 0.5rem 1rem;
+      padding: 0.4rem 0.85rem;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
-      font-weight: bold;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: darken($danger, 8%);
+      }
     }
   }
 
   // Navigation Tabs
   .tabs-container {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem 0 1.5rem;
+    margin-bottom: 1rem;
 
     .tab-button {
-      padding: 0.6rem 1.5rem;
+      padding: 0.5rem 1.25rem;
       border-radius: 6px;
-      border: none;
+      border: 1px solid $border-color;
       cursor: pointer;
-      font-weight: bold;
-      background-color: $bg-input;
-      color: $text-light;
-      transition: background-color 0.2s;
+      font-weight: 600;
+      background-color: #f1f5f9;
+      color: $text-secondary;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #e2e8f0;
+        color: $text-dark;
+      }
 
       &.active {
         background-color: $primary;
+        border-color: $primary;
+        color: $text-light;
       }
     }
   }
@@ -99,19 +126,22 @@ $border-input: #555555;
   .form-field {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.35rem;
 
     input, select, textarea {
-      padding: 0.5rem;
+      padding: 0.6rem 0.75rem;
       background-color: $bg-input;
-      color: $text-light;
+      color: $text-dark;
       border: 1px solid $border-input;
-      border-radius: 4px;
+      border-radius: 6px;
       outline: none;
       font-family: inherit;
+      font-size: 0.9rem;
+      transition: border-color 0.2s ease;
 
       &:focus {
         border-color: $primary;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
       }
     }
   }
@@ -119,22 +149,21 @@ $border-input: #555555;
   // Listings Section
   .listings-wrapper {
     display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
-    justify-content: center;
+    gap: 1.5rem;
+    flex-direction: column;
     width: 100%;
-    maxWidth: 900px;
+    padding: 0 1.5rem 2rem 1.5rem;
+    box-sizing: border-box;
 
     .filter-panel {
-      flex: 1;
-      min-width: 300px;
+      width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: 1.5rem;
 
       .filter-card {
         background-color: $bg-card;
-        padding: 1.5rem;
+        padding: 1.25rem;
         border-radius: 8px;
         border: 1px solid $border-color;
 
@@ -148,20 +177,24 @@ $border-input: #555555;
             align-items: center;
             gap: 0.5rem;
             cursor: pointer;
+            font-size: 0.9rem;
+            color: $text-secondary;
           }
 
           .select-label {
             display: flex;
             flex-direction: column;
-            gap: 0.3rem;
+            gap: 0.35rem;
+            font-size: 0.85rem;
+            color: $text-secondary;
 
             select {
               width: 100%;
-              padding: 0.4rem;
+              padding: 0.5rem;
               background-color: $bg-input;
-              color: $text-light;
+              color: $text-dark;
               border: 1px solid $border-input;
-              border-radius: 4px;
+              border-radius: 6px;
             }
           }
         }
@@ -169,18 +202,17 @@ $border-input: #555555;
     }
 
     .content-panel {
-      flex: 1.2;
-      min-width: 320px;
+      width: 100%;
 
       .listing-form {
-        background-color: $bg-card;
-        padding: 2rem;
+        background-color: #ffffff;
+        padding: 1.5rem;
         border-radius: 8px;
         border: 1px solid $border-color;
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
 
         .form-header {
           display: flex;
@@ -189,6 +221,7 @@ $border-input: #555555;
 
           h3 {
             margin: 0;
+            color: $text-dark;
           }
 
           .btn-close {
@@ -197,6 +230,11 @@ $border-input: #555555;
             color: $text-muted;
             font-size: 1.2rem;
             cursor: pointer;
+            padding: 0.25rem;
+
+            &:hover {
+              color: $text-dark;
+            }
           }
         }
 
@@ -211,7 +249,7 @@ $border-input: #555555;
 
         .form-actions {
           display: flex;
-          gap: 0.5rem;
+          gap: 0.75rem;
           margin-top: 0.5rem;
 
           .btn-submit {
@@ -219,34 +257,49 @@ $border-input: #555555;
             background-color: $primary;
             color: $text-light;
             border: none;
-            padding: 0.7rem;
-            border-radius: 4px;
+            padding: 0.65rem 1rem;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+
+            &:hover {
+              background-color: darken($primary, 8%);
+            }
           }
 
           .btn-cancel {
             flex: 1;
-            background-color: $border-input;
-            color: $text-light;
-            border: none;
-            padding: 0.7rem;
-            border-radius: 4px;
+            background-color: #f1f5f9;
+            color: $text-secondary;
+            border: 1px solid $border-color;
+            padding: 0.65rem 1rem;
+            border-radius: 6px;
             cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+
+            &:hover {
+              background-color: #e2e8f0;
+              color: $text-dark;
+            }
           }
         }
       }
 
       .empty-list-notice {
         color: $text-muted;
+        padding: 1rem 0;
       }
 
       .listing-card {
-        background-color: $bg-card;
-        padding: 1rem;
-        border-radius: 6px;
+        background-color: #ffffff;
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
         margin-bottom: 1rem;
+        border: 1px solid $border-color;
         border-left: 4px solid $primary;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
         &.is-owner {
           border-left-color: $success;
@@ -259,31 +312,46 @@ $border-input: #555555;
 
           h4 {
             margin: 0 0 0.5rem 0;
+            color: $text-dark;
 
             .badge {
-              font-size: 0.8rem;
-              opacity: 0.6;
+              font-size: 0.75rem;
+              color: $text-muted;
+              margin-left: 0.5rem;
             }
           }
 
           .card-actions {
             display: flex;
-            gap: 0.3rem;
+            gap: 0.4rem;
 
             button {
               border: none;
-              padding: 0.2rem 0.4rem;
+              padding: 0.25rem 0.5rem;
               cursor: pointer;
               border-radius: 4px;
               font-size: 0.75rem;
-              color: $text-light;
+              font-weight: 500;
 
               &.btn-edit {
-                background: $bg-input;
+                background: #f1f5f9;
+                color: $text-secondary;
+                border: 1px solid $border-color;
+
+                &:hover {
+                  background: #e2e8f0;
+                  color: $text-dark;
+                }
               }
 
               &.btn-delete {
-                background: $danger;
+                background: rgba(239, 68, 68, 0.1);
+                color: $danger;
+
+                &:hover {
+                  background: $danger;
+                  color: $text-light;
+                }
               }
             }
           }
@@ -293,6 +361,7 @@ $border-input: #555555;
           margin: 0 0 0.5rem 0;
           font-size: 0.9rem;
           color: $text-secondary;
+          line-height: 1.4;
         }
 
         .card-contact {
@@ -302,8 +371,9 @@ $border-input: #555555;
         }
 
         .card-meta {
-          color: #666666;
+          color: #94a3b8;
           font-size: 0.75rem;
+          margin-top: 0.4rem;
         }
       }
     }
@@ -312,47 +382,58 @@ $border-input: #555555;
   // Users Section
   .users-wrapper {
     width: 100%;
-    max-width: 800px;
+    padding: 0 1.5rem 2rem 1.5rem;
+    box-sizing: border-box;
 
     .empty-list-notice {
       color: $text-muted;
     }
 
     .user-card {
-      background-color: $bg-card;
-      padding: 1rem;
-      border-radius: 6px;
+      background-color: #ffffff;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      border: 1px solid $border-color;
       border-left: 4px solid $success;
       margin-bottom: 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
       .user-details {
         h4 {
           margin: 0 0 0.3rem 0;
+          color: $text-dark;
         }
 
         p {
           margin: 0;
           font-size: 0.85rem;
-          color: $text-muted;
+          color: $text-secondary;
         }
 
         small {
-          color: #666666;
+          color: #94a3b8;
           font-size: 0.75rem;
         }
       }
 
       .btn-delete-user {
-        background: $danger;
-        color: $text-light;
+        background: rgba(239, 68, 68, 0.1);
+        color: $danger;
         border: none;
-        padding: 0.4rem 0.8rem;
+        padding: 0.4rem 0.85rem;
         cursor: pointer;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: $danger;
+          color: $text-light;
+        }
       }
     }
   }

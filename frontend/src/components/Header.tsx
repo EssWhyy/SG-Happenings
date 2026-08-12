@@ -35,7 +35,7 @@ export const Header: React.FC = () => {
         textAlign: 'center',
         flex: 1
       }}>
-        Singapore Interactive Map
+        SG Happenings: Free Events, Hangs and Second-Hand in Singapore
       </h1>
 
       {/* Right Action: Profile / Login */}
