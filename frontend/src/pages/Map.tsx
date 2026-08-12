@@ -4,7 +4,6 @@ import TrainIcon from '@mui/icons-material/Train';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalParkIcon from '@mui/icons-material/Park';
 
-import Header from '../components/Header';
 import MapControls from '../components/MapControls';
 import type { OverlayConfig }  from '../components/MapControls';
 import { MrtOverlay } from '../components/overlays/MrtOverlay';
@@ -91,8 +90,6 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
   });
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
-      <Header />
-
       {addEventMode && (
         <div
           style={{

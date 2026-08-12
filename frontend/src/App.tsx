@@ -1,10 +1,11 @@
 import { useEffect, useState, createContext, useContext } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
-import LoginPage from './pages/Login';
+import LoginModal from './components/LoginModal';
 import Dashboard from './pages/Dashboard';
 import type { DashboardView } from './pages/Dashboard';
 import OneMapSingapore from './pages/Map';
+import Header from './components/Header';
 import type { Listing } from '../../shared/apiContract';
 
 interface Coordinates {
@@ -16,12 +17,12 @@ const ViewportContext = createContext<{ isMobile: boolean }>({ isMobile: false }
 export const useViewport = () => useContext(ViewportContext);
 
 export default function App() {
-  const navigate = useNavigate();
   const auth = useAuth();
   const backendUrl = import.meta.env.VITE_API_URL;
 
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
   const [pendingCoords, setPendingCoords] = useState<Coordinates | null>(null);
   
   // Dashboard view and selection state
@@ -48,6 +49,23 @@ export default function App() {
   useEffect(() => {
     fetchListings();
   }, [backendUrl]);
+
+  // Handler for Header Bookmark button click
+  const handleOpenBookmarks = () => {
+    setSelectedListing(null);
+    setPendingCoords(null);
+    setDashboardView('bookmark');
+    setIsSidebarOpen(true);
+  };
+
+  // Handler for Header Profile button click: opens modal if logged out, toggles dashboard if logged in
+  const handleToggleProfile = () => {
+    if (!auth.isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setIsSidebarOpen((prev) => !prev);
+  };
 
   // 2. Triggered when a new node placement is initiated on the map (Create Mode)
   const handleNodeAddedOnMap = (lat: number, lng: number) => {
@@ -132,17 +150,9 @@ export default function App() {
     return () => media.removeEventListener('change', listener);
   }, []);
 
-  useEffect(() => {
-    if (auth.isAuthenticated) {
-      if (window.location.pathname === '/login') {
-        navigate('/');
-      }
-    }
-  }, [auth.isAuthenticated, navigate]);
-
   const handleLogout = () => {
     auth.removeUser(); 
-    navigate('/login');
+    setIsSidebarOpen(false);
   };
 
   if (auth.isLoading) {
@@ -153,53 +163,64 @@ export default function App() {
     <ViewportContext.Provider value={{ isMobile }}>
       <Routes>
         <Route 
-          path="/login" 
-          element={<LoginPage onLogin={() => {}} />} 
-        />
-
-        <Route 
           path="/" 
           element={
-            <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', overflow: 'hidden' }}>
               
-              {/* Main Map Workspace */}
-              <div style={{ flex: 1, height: '100%', position: 'relative' }}>
-                <OneMapSingapore 
-                  listings={listings}
-                  onNodeAdded={handleNodeAddedOnMap} 
-                  onNodeClick={handleMapNodeClick}
-                  pendingCoords={pendingCoords} 
-                />
-              </div>
+              {/* Header Bar */}
+              <Header 
+                onBookmarkClick={handleOpenBookmarks}
+                onProfileClick={handleToggleProfile}
+              />
 
-              {/* Dashboard Side Panel */}
-              {isSidebarOpen && (
-                <div style={{
-                  width: isMobile ? '100%' : '450px',
-                  height: '100%',
-                  backgroundColor: '#242424',
-                  boxShadow: '-4px 0 15px rgba(0,0,0,0.5)',
-                  overflowY: 'auto',
-                  zIndex: 1100,
-                  position: isMobile ? 'absolute' : 'relative',
-                  right: 0,
-                  transition: 'all 0.3s ease'
-                }}>
-                  <Dashboard 
-                    view={dashboardView}
+              {/* Main Content Area */}
+              <div style={{ display: 'flex', flex: 1, position: 'relative', overflow: 'hidden' }}>
+                
+                {/* Main Map Workspace */}
+                <div style={{ flex: 1, height: '100%', position: 'relative' }}>
+                  <OneMapSingapore 
                     listings={listings}
-                    setListings={setListings}
-                    selectedListing={selectedListing}
-                    onSelectListing={handleSelectListing}
-                    onEditListing={handleEditListing}
-                    onLogout={handleLogout} 
-                    pendingCoords={pendingCoords}
-                    onSuccess={handleDeploySuccess}
-                    onClose={handleCloseSidebar}
+                    onNodeAdded={handleNodeAddedOnMap} 
+                    onNodeClick={handleMapNodeClick}
+                    pendingCoords={pendingCoords} 
                   />
                 </div>
-              )}
 
+                {/* Dashboard Side Panel */}
+                {isSidebarOpen && (
+                  <div style={{
+                    width: isMobile ? '100%' : '450px',
+                    height: '100%',
+                    backgroundColor: '#242424',
+                    boxShadow: '-4px 0 15px rgba(0,0,0,0.5)',
+                    overflowY: 'auto',
+                    zIndex: 1100,
+                    position: isMobile ? 'absolute' : 'relative',
+                    right: 0,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <Dashboard 
+                      view={dashboardView}
+                      listings={listings}
+                      setListings={setListings}
+                      selectedListing={selectedListing}
+                      onSelectListing={handleSelectListing}
+                      onEditListing={handleEditListing}
+                      onLogout={handleLogout} 
+                      pendingCoords={pendingCoords}
+                      onSuccess={handleDeploySuccess}
+                      onClose={handleCloseSidebar}
+                    />
+                  </div>
+                )}
+
+              </div>
+
+              {/* Material UI Animated Modal Login */}
+              <LoginModal 
+                open={isLoginModalOpen} 
+                onClose={() => setIsLoginModalOpen(false)} 
+              />
             </div>
           } 
         />

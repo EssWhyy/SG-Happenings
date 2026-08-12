@@ -1,7 +1,12 @@
 // Header.tsx
 import React from 'react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onBookmarkClick?: () => void;
+  onProfileClick?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onBookmarkClick, onProfileClick }) => {
   return (
     <header style={{
       width: '100%',
@@ -14,12 +19,12 @@ export const Header: React.FC = () => {
       padding: '0 16px',
       boxSizing: 'border-box',
       position: 'relative',
-      zIndex: 1000, // Keeps header above the map layer
+      zIndex: 1000,
       fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
       {/* Left Action: Bookmark */}
       <button 
-        onClick={() => alert('Bookmarks clicked')}
+        onClick={onBookmarkClick}
         style={iconButtonStyle}
         aria-label="Bookmarks"
       >
@@ -40,7 +45,7 @@ export const Header: React.FC = () => {
 
       {/* Right Action: Profile / Login */}
       <button 
-        onClick={() => alert('Profile clicked')}
+        onClick={onProfileClick}
         style={iconButtonStyle}
         aria-label="User Profile"
       >
