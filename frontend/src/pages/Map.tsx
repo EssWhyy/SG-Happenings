@@ -13,6 +13,7 @@ import type { Listing } from '../../../shared/apiContract';
 interface OneMapSingaporeProps {
   listings: Listing[];
   pendingCoords: { lat: number; lng: number } | null;
+  currentUserId?: string;
   onNodeAdded: (lat: number, lng: number) => void;
   onNodeClick: (listingId: string) => void;
 }
@@ -33,7 +34,7 @@ const MAP_CONTAINER_STYLE = {
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
-export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pendingCoords, onNodeAdded, onNodeClick }) => {
+export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pendingCoords, currentUserId, onNodeAdded, onNodeClick }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -135,43 +136,47 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
           {activeOverlays.mrt && <MrtOverlay />}
 
           {/* Render Saved Permanent Listings from DynamoDB */}
-          {listings.map((listing) => (
-            <React.Fragment key={listing.id}>
-              <OverlayView
-                position={{ lat: listing.latitude, lng: listing.longitude }}
-                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                getPixelPositionOffset={(width, height) => ({
-                  x: -(width / 2),
-                  y: -(height / 2),
-                })}
-              >
-                <div
-                  style={{ cursor: 'pointer', fontSize: '24px' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNodeClick(listing.id); // <--- Trigger backend fetch callback
-                  }}
-                  onMouseEnter={() => setHoveredListingId(listing.id)}
-                  onMouseLeave={() => setHoveredListingId(null)}
-                >
-                  <MapNodeIcon emoji={listing.emoji || "📍"} type={listing.type}/>
-                </div>
-              </OverlayView>
+          {listings.map((listing) => {
+            const isOwner = Boolean(currentUserId && listing.authorId === currentUserId);
 
-              {hoveredListingId === listing.id && (
+            return (
+              <React.Fragment key={listing.id}>
                 <OverlayView
                   position={{ lat: listing.latitude, lng: listing.longitude }}
-                  mapPaneName={OverlayView.FLOAT_PANE}
+                  mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
                   getPixelPositionOffset={(width, height) => ({
                     x: -(width / 2),
-                    y: -height - 20,
+                    y: -(height / 2),
                   })}
                 >
-                  <MapNodeTooltip listing={listing} authorName="Local User" />
+                  <div
+                    style={{ cursor: 'pointer', fontSize: '24px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNodeClick(listing.id); // <--- Trigger backend fetch callback
+                    }}
+                    onMouseEnter={() => setHoveredListingId(listing.id)}
+                    onMouseLeave={() => setHoveredListingId(null)}
+                  >
+                    <MapNodeIcon emoji={listing.emoji || "📍"} type={listing.type} isOwner={isOwner}/>
+                  </div>
                 </OverlayView>
-              )}
-            </React.Fragment>
-          ))}
+
+                {hoveredListingId === listing.id && (
+                  <OverlayView
+                    position={{ lat: listing.latitude, lng: listing.longitude }}
+                    mapPaneName={OverlayView.FLOAT_PANE}
+                    getPixelPositionOffset={(width, height) => ({
+                      x: -(width / 2),
+                      y: -height - 20,
+                    })}
+                  >
+                    <MapNodeTooltip listing={listing} authorName="Local User" />
+                  </OverlayView>
+                )}
+              </React.Fragment>
+            );
+          })}
 
           {/* Render Uncommitted Pending Draft Node */}
           {pendingCoords && pendingCoords.lat && pendingCoords.lng && (
@@ -184,7 +189,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
               })}
             >
               <div style={{ cursor: 'pointer', opacity: 0.8 }}>
-                <MapNodeIcon emoji="📍" type="default"/>
+                <MapNodeIcon emoji="📍" type="Default"/>
               </div>
             </OverlayView>
           )}

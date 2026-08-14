@@ -40,6 +40,8 @@ export const useViewport = () => useContext(ViewportContext);
 
 function MainLayout() {
   const auth = useAuth();
+  const currentUserId = auth.isAuthenticated ? auth.user?.profile?.sub : undefined;
+
   const backendUrl = import.meta.env.VITE_API_URL;
 
   const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -211,6 +213,7 @@ function MainLayout() {
                 <div style={{ flex: 1, height: '100%', position: 'relative' }}>
                   <OneMapSingapore 
                     listings={listings}
+                    currentUserId={currentUserId}
                     onNodeAdded={handleNodeAddedOnMap} 
                     onNodeClick={handleMapNodeClick}
                     pendingCoords={pendingCoords} 
