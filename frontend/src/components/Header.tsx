@@ -1,12 +1,16 @@
-// Header.tsx
 import React from 'react';
 
 interface HeaderProps {
+  userAvatarUrl?: string | null;
   onBookmarkClick?: () => void;
   onProfileClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onBookmarkClick, onProfileClick }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  userAvatarUrl, 
+  onBookmarkClick, 
+  onProfileClick 
+}) => {
   return (
     <header style={{
       width: '100%',
@@ -49,7 +53,20 @@ export const Header: React.FC<HeaderProps> = ({ onBookmarkClick, onProfileClick 
         style={iconButtonStyle}
         aria-label="User Profile"
       >
-        👤
+        {userAvatarUrl ? (
+          <img 
+            src={userAvatarUrl} 
+            alt="User Profile" 
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              objectFit: 'cover'
+            }} 
+          />
+        ) : (
+          '👤'
+        )}
       </button>
     </header>
   );

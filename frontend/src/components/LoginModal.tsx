@@ -1,4 +1,3 @@
-// components/LoginModal.tsx
 import React, { useEffect } from 'react';
 import { useAuth } from 'react-oidc-context';
 import {

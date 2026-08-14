@@ -10,6 +10,7 @@ import type { DashboardView } from './pages/Dashboard';
 import OneMapSingapore from './pages/Map';
 import Header from './components/Header';
 import type { Listing } from '../../shared/apiContract';
+import { getUserAvatarUrl } from './utils/getAvatarUrl';
 
 // Configure OIDC Provider for AWS Cognito with Persistent LocalStorage
 const cognitoAuthConfig: AuthProviderProps = {
@@ -180,6 +181,10 @@ function MainLayout() {
     return <div className="loading-screen">Loading authentication...</div>;
   }
 
+  const avatarUrl = auth.isAuthenticated 
+    ? getUserAvatarUrl(auth.user?.profile) 
+    : null;
+    
   return (
     <ViewportContext.Provider value={{ isMobile }}>
       <Routes>
@@ -192,6 +197,7 @@ function MainLayout() {
               <Header 
                 onBookmarkClick={handleOpenBookmarks}
                 onProfileClick={handleToggleProfile}
+                userAvatarUrl={avatarUrl}
               />
 
               {/* Main Content Area */}
