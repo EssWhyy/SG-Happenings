@@ -1,12 +1,33 @@
+// App.tsx
 import { useEffect, useState, createContext, useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
+import { AuthProvider, useAuth } from 'react-oidc-context';
+import type { AuthProviderProps } from 'react-oidc-context';
+import { WebStorageStateStore } from 'oidc-client-ts';
 import LoginModal from './components/LoginModal';
 import Dashboard from './pages/Dashboard';
 import type { DashboardView } from './pages/Dashboard';
 import OneMapSingapore from './pages/Map';
 import Header from './components/Header';
 import type { Listing } from '../../shared/apiContract';
+
+// Configure OIDC Provider for AWS Cognito with Persistent LocalStorage
+const cognitoAuthConfig: AuthProviderProps = {
+  authority: import.meta.env.VITE_COGNITO_AUTHORITY || 'https://cognito-idp.ap-southeast-1.amazonaws.com/ap-southeast-1_8JmiWWMJZ',
+  client_id: import.meta.env.VITE_COGNITO_CLIENT_ID || '5lqa9a9o0nd3eb66uulika4ahs',
+  redirect_uri: typeof window !== 'undefined' ? window.location.origin : '',
+  response_type: 'code',
+  scope: 'email openid profile',
+  // Persist JWT tokens and session data in localStorage across reloads/sessions
+  userStore: typeof window !== 'undefined' 
+    ? new WebStorageStateStore({ store: window.localStorage }) 
+    : undefined,
+  automaticSilentRenew: true,
+  onSigninCallback: () => {
+    // Clean up OIDC query parameters (?code=...) from the URL after redirect
+    window.history.replaceState({}, document.title, window.location.pathname);
+  },
+};
 
 interface Coordinates {
   lat: number;
@@ -16,7 +37,7 @@ interface Coordinates {
 const ViewportContext = createContext<{ isMobile: boolean }>({ isMobile: false });
 export const useViewport = () => useContext(ViewportContext);
 
-export default function App() {
+function MainLayout() {
   const auth = useAuth();
   const backendUrl = import.meta.env.VITE_API_URL;
 
@@ -231,5 +252,13 @@ export default function App() {
         />
       </Routes>
     </ViewportContext.Provider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider {...cognitoAuthConfig}>
+      <MainLayout />
+    </AuthProvider>
   );
 }
