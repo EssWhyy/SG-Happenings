@@ -28,7 +28,7 @@ import PersonOutlineIcon from '@mui/icons-material/Person';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 
 import type { Listing, User } from '../../../shared/apiContract';
-
+import { useAuth } from 'react-oidc-context';
 interface BookmarkDirectoryViewProps {
   backendUrl: string;
   cognitoUserId: string;
@@ -37,6 +37,7 @@ interface BookmarkDirectoryViewProps {
   onSelectListing?: (listing: Listing) => void;
   onEditListing?: (listing: Listing) => void;
   setStatusMessage?: (msg: string) => void;
+  onOpenLogin?: () => void;
 }
 
 export default function BookmarkDirectoryView({
@@ -46,7 +47,9 @@ export default function BookmarkDirectoryView({
   setListings,
   onSelectListing,
   onEditListing,
-  setStatusMessage
+  setStatusMessage,
+  onOpenLogin
+
 }: BookmarkDirectoryViewProps) {
   const [activeTab, setActiveTab] = useState<'listings' | 'users'>('listings');
   const [users, setUsers] = useState<User[]>([]);
@@ -54,6 +57,8 @@ export default function BookmarkDirectoryView({
   const [selectedType, setSelectedType] = useState<string>('All');
   const [showOnlyMyListings, setShowOnlyMyListings] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const auth = useAuth();
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -129,6 +134,45 @@ export default function BookmarkDirectoryView({
     }
   };
 
+
+    if (!auth.isAuthenticated) {
+      return (
+        <Box
+          sx={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            textAlign: 'center',
+            p: 4,
+            bgcolor: '#ffffff',
+            color: '#1e293b',
+            boxSizing: 'border-box',
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#0f172a', maxWidth: '300px' }}>
+            Please login to Bookmark listings on SG Happenings!
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={onOpenLogin}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+              bgcolor: '#2563eb',
+              '&:hover': { bgcolor: '#1d4ed8' },
+            }}
+          >
+            Open Login
+          </Button>
+        </Box>
+      );
+    }
+    
   return (
     <Box
       sx={{

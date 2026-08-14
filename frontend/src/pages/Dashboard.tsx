@@ -18,6 +18,7 @@ interface DashboardProps {
   selectedListing?: Listing | null;
   onSelectListing?: (listing: Listing) => void;
   onEditListing?: (listing: Listing) => void;
+  onOpenLogin?: () => void;
 }
 
 export default function Dashboard({
@@ -30,7 +31,8 @@ export default function Dashboard({
   onClose,
   selectedListing,
   onSelectListing,
-  onEditListing
+  onEditListing,
+  onOpenLogin
 }: DashboardProps) {
   const backendUrl = import.meta.env.VITE_API_URL;
   const auth = useAuth();
@@ -59,6 +61,7 @@ export default function Dashboard({
           setListings={setListings}
           onSuccess={onSuccess}
           onClose={onClose}
+          onOpenLogin={onOpenLogin}
         />
       )}
 
@@ -70,6 +73,7 @@ export default function Dashboard({
           setListings={setListings}
           onSelectListing={onSelectListing}
           onEditListing={onEditListing}
+          onOpenLogin={onOpenLogin}
         />
       )}
 

@@ -177,6 +177,10 @@ function MainLayout() {
     setIsSidebarOpen(false);
   };
 
+  const handleOpenLoginModal = () => {
+    setIsLoginModalOpen(true);
+  };
+
   if (auth.isLoading) {
     return <div className="loading-screen">Loading authentication...</div>;
   }
@@ -237,6 +241,7 @@ function MainLayout() {
                       pendingCoords={pendingCoords}
                       onSuccess={handleDeploySuccess}
                       onClose={handleCloseSidebar}
+                      onOpenLogin={handleOpenLoginModal}
                     />
                   </div>
                 )}

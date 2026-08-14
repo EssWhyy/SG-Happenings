@@ -16,8 +16,8 @@ import {
 
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SendIcon from '@mui/icons-material/Send';
-
 import type { CreateEditListingResponse, Listing } from '../../../shared/apiContract';
+import { useAuth } from 'react-oidc-context';
 
 interface CreateEditListingViewProps {
   backendUrl: string;
@@ -29,6 +29,7 @@ interface CreateEditListingViewProps {
   onSuccess?: (newListing: Listing) => void;
   onClose?: () => void;
   setStatusMessage?: (msg: string) => void;
+  onOpenLogin?: () => void;
 }
 
 const EMOJI_REGEX = /^(\p{Extended_Pictographic}|\p{Emoji_Presentation})*$/u;
@@ -43,6 +44,7 @@ export default function CreateEditListingView({
   onSuccess,
   onClose,
   setStatusMessage,
+  onOpenLogin
 }: CreateEditListingViewProps) {
   const [editingListingId, setEditingListingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -56,6 +58,8 @@ export default function CreateEditListingView({
   const [existingImageUrl, setExistingImageUrl] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const auth = useAuth();
 
   const clearForm = () => {
     setEditingListingId(null);
@@ -217,6 +221,44 @@ export default function CreateEditListingView({
       if (setStatusMessage) setStatusMessage('Listings synced successfully with AWS backend.');
     }
   };
+
+  if (!auth.isAuthenticated) {
+    return (
+      <Box
+        sx={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          textAlign: 'center',
+          p: 4,
+          bgcolor: '#ffffff',
+          color: '#1e293b',
+          boxSizing: 'border-box',
+          gap: 2,
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 600, color: '#0f172a', maxWidth: '300px' }}>
+          Please login to Create listings on SG Happenings!
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={onOpenLogin}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            px: 3,
+            bgcolor: '#2563eb',
+            '&:hover': { bgcolor: '#1d4ed8' },
+          }}
+        >
+          Open Login
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box
