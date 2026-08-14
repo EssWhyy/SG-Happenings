@@ -154,7 +154,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
                   onMouseEnter={() => setHoveredListingId(listing.id)}
                   onMouseLeave={() => setHoveredListingId(null)}
                 >
-                  <MapNodeIcon emoji="📍" />
+                  <MapNodeIcon emoji={listing.emoji || "📍"} type={listing.type}/>
                 </div>
               </OverlayView>
 
@@ -184,7 +184,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
               })}
             >
               <div style={{ cursor: 'pointer', opacity: 0.8 }}>
-                <MapNodeIcon emoji="📍" />
+                <MapNodeIcon emoji="📍" type="default"/>
               </div>
             </OverlayView>
           )}
