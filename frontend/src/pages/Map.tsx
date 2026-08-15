@@ -13,6 +13,7 @@ import { MapNodeIcon, MapNodeTooltip } from '../components/MapNode';
 import type { Listing } from '../../../shared/apiContract';
 import HawkerCentresOverlay from '../components/overlays/HawkerCentresOverlay';
 import SportsFacilitiesOverlay from '../components/overlays/SportsFacilitiesOverlay';
+import DistrictOverlay from '../components/overlays/DIstrictOverlay';
 
 interface OneMapSingaporeProps {
   listings: Listing[];
@@ -141,6 +142,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
             zoomControl: true,
           }}
         >
+          {activeOverlays.districts && <DistrictOverlay />}
           {activeOverlays.mrt && <MrtOverlay />}
           {activeOverlays.food && <HawkerCentresOverlay />}
           {activeOverlays.sports && <SportsFacilitiesOverlay />}
