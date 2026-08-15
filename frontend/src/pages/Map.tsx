@@ -3,12 +3,16 @@ import { GoogleMap, useJsApiLoader, OverlayView } from '@react-google-maps/api';
 import TrainIcon from '@mui/icons-material/Train';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalParkIcon from '@mui/icons-material/Park';
+import LocationCityIcon from '@mui/icons-material/LocationCity';
+import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
 
 import MapControls from '../components/MapControls';
 import type { OverlayConfig }  from '../components/MapControls';
 import { MrtOverlay } from '../components/overlays/MrtOverlay';
 import { MapNodeIcon, MapNodeTooltip } from '../components/MapNode';
 import type { Listing } from '../../../shared/apiContract';
+import HawkerCentresOverlay from '../components/overlays/HawkerCentresOverlay';
+import SportsFacilitiesOverlay from '../components/overlays/SportsFacilitiesOverlay';
 
 interface OneMapSingaporeProps {
   listings: Listing[];
@@ -44,9 +48,11 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
 
   const [activeOverlays, setActiveOverlays] = useState<Record<string, boolean>>({
-    mrt: true,
-    parks: false,
+    districts: false,
+    mrt: false,
     food: false,
+    sports: false,
+    parks: false,
   });
 
   const toggleAddEventMode = () => {
@@ -76,9 +82,11 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
   );
 
   const overlayConfigs: OverlayConfig[] = [
+    { id: 'districts', name: 'Neighbourhood Districts', icon: <LocationCityIcon />, active: activeOverlays.districts },
     { id: 'mrt', name: 'MRT Lines', icon: <TrainIcon />, active: activeOverlays.mrt },
-    { id: 'parks', name: 'Parks & Nature', icon: <LocalParkIcon />, active: activeOverlays.parks },
-    { id: 'food', name: 'Food & Dining', icon: <RestaurantIcon />, active: activeOverlays.food },
+    { id: 'food', name: 'Hawker Centres', icon: <RestaurantIcon />, active: activeOverlays.food },
+    { id: 'sports', name: 'Sports Centres', icon: <SportsBasketballIcon />, active: activeOverlays.sports },
+    { id: 'parks', name: 'Parks & Reserves', icon: <LocalParkIcon />, active: activeOverlays.parks },
   ];
 
   if (loadError) return <div>Error loading Google Maps API</div>;
@@ -134,6 +142,8 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
           }}
         >
           {activeOverlays.mrt && <MrtOverlay />}
+          {activeOverlays.food && <HawkerCentresOverlay />}
+          {activeOverlays.sports && <SportsFacilitiesOverlay />}
 
           {/* Render Saved Permanent Listings from DynamoDB */}
           {listings.map((listing) => {
