@@ -5,6 +5,7 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalParkIcon from '@mui/icons-material/Park';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
+import PersonIcon from '@mui/icons-material/Person';
 
 import MapControls from '../components/MapControls';
 import type { OverlayConfig }  from '../components/MapControls';
@@ -54,6 +55,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
     food: false,
     sports: false,
     parks: false,
+    myNodesOnly: false,
   });
 
   const toggleAddEventMode = () => {
@@ -83,6 +85,12 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
   );
 
   const overlayConfigs: OverlayConfig[] = [
+    {
+      id: 'myNodesOnly',
+      name: 'My Posts Only',
+      icon: <PersonIcon />,
+      active: activeOverlays.myNodesOnly,
+    },
     { id: 'districts', name: 'Neighbourhood Districts', icon: <LocationCityIcon />, active: activeOverlays.districts },
     { id: 'mrt', name: 'MRT Lines', icon: <TrainIcon />, active: activeOverlays.mrt },
     { id: 'food', name: 'Hawker Centres', icon: <RestaurantIcon />, active: activeOverlays.food },
@@ -90,14 +98,18 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
     { id: 'parks', name: 'Parks & Reserves', icon: <LocalParkIcon />, active: activeOverlays.parks },
   ];
 
+  // Filter listings based on current user ID
+  const visibleListings = listings.filter((listing) => {
+    if (activeOverlays.myNodesOnly) {
+      if (!currentUserId) return false;
+      return listing.authorId === currentUserId;
+    }
+    return true;
+  });
+
   if (loadError) return <div>Error loading Google Maps API</div>;
   if (!isLoaded) return <div>Loading Map...</div>;
 
-  console.log('[Map] Rendering map with total persisted listings:', listings.length);
-  console.log('[Map Debug] Current state:', {
-    listingsCount: listings.length,
-    pendingCoords: pendingCoords
-  });
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
       {addEventMode && (
@@ -147,8 +159,8 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
           {activeOverlays.food && <HawkerCentresOverlay />}
           {activeOverlays.sports && <SportsFacilitiesOverlay />}
 
-          {/* Render Saved Permanent Listings from DynamoDB */}
-          {listings.map((listing) => {
+          {/* Render Filtered Saved Listings */}
+          {visibleListings.map((listing) => {
             const isOwner = Boolean(currentUserId && listing.authorId === currentUserId);
 
             return (
@@ -165,7 +177,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
                     style={{ cursor: 'pointer', fontSize: '24px' }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      onNodeClick(listing.id); // <--- Trigger backend fetch callback
+                      onNodeClick(listing.id);
                     }}
                     onMouseEnter={() => setHoveredListingId(listing.id)}
                     onMouseLeave={() => setHoveredListingId(null)}
@@ -190,7 +202,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
             );
           })}
 
-          {/* Render Uncommitted Pending Draft Node */}
+          {/* Render Uncommitted Draft Node */}
           {pendingCoords && pendingCoords.lat && pendingCoords.lng && (
             <OverlayView
               position={{ lat: pendingCoords.lat, lng: pendingCoords.lng }}
