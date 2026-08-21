@@ -10,20 +10,23 @@ A Serverless bulletin Map of Singapore for anyone to share meetups, events, and 
 | **GCP Services** | ![Google Maps](https://img.shields.io/badge/Google_Maps-4285F4?style=for-the-badge&logo=googlemaps&logoColor=white) ![Firebase](https://img.shields.io/badge/Firebase-DD2C00?style=for-the-badge&logo=firebase&logoColor=white) |
 
 ## Screenshots
+<img width="1424" height="785" alt="Prototype Screenshot" src="https://github.com/user-attachments/assets/3e13e4d6-f00e-48e9-bd41-d42f9a0fbf9d" />
 
 ## Why I Made This
 
-I struggled to find meaningful events fresh out of uni, when there were no longer any classes, CCAs or halls to make new friends or take respite from work. I tried out several meetup & events apps and I had a mixed experience with them. 
+I struggled to find meaningful events fresh out of university when I no longer had classes, co-curricular activities, or hall life to meet people and take a break from work. I tried several meetup and event platforms, but my experience was mixed.
 
-**Common pain points of such apps include: **
-•	Events gatekept with high prices which most ordinary Singaporeans would not go to (Biz/Tech Symposiums for e.g.)
-•	Searching for events is convoluted or ineffective, can't find events that I want to go, Eventbrite for example. Searching "skating" gives me events like "Falun Gong Exercise Workshop" and everything else besides skating events.
-•	Having events be tied to or visible in specific groups that you need to join rather than all of them be visible from the start  (e.g. Meetup)
+### Common Pain Points of Existing Platforms:
 
-**So why make an platform of an events map of Singapore? **
-•	Using a map to visualize events is effective because they show all events available, the proximity to you, and the nearby amenities around.  
-•	All events listed will be free (monetary wise) to attend, this enables anyone to take charge and source for their own community. You can list all sorts of random hangouts and events, like this one: ()
-•	Consumerism is just too rampant in Singapore, with so many people impulse buying stuff from ecommerce sites everytime there is a monthly sale, leading to increased consumer waste and transport emissions. Secondhand trade can not only save people money, but it promotes the value of a Circular Economy. (insert explanation or link to Circular Economy)
+* High Price Barriers: Many listed events are expensive business or tech symposiums that the average person would not attend.
+* Poor Search Relevance: Finding relevant events is often frustratingly difficult. For example, searching "skating" on Eventbrite returns results like "Falun Gong Exercise Workshop" instead of actual skating meetups.
+* Walled Gardens: Apps like Meetup often bury events inside specific groups, forcing you to join a community first before seeing what is happening, rather than displaying everything openly from the start.
+
+### Why Build an Interactive Event Map for Singapore?
+
+* Location-First Visualization: A map immediately shows all available events around you, their proximity, and surrounding amenities.
+* 100% Free Events: Every event listed is free to attend, empowering anyone to build or find a community without financial barriers. Anyone can host casual hangouts or niche activities—such as Insert Event Name.
+* Promoting Sustainability & Community: Overconsumption is widespread, with monthly e-commerce sales driving up waste and transport emissions. Incorporating secondhand trades and community swaps not only saves people money, but also advances a Circular Economy by giving pre-loved items a second life.
 
 
 ## Features
