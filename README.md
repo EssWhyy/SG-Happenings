@@ -31,11 +31,11 @@ I struggled to find meaningful events fresh out of university when I no longer h
 
 ## Features
 
-•	Interactive Geospatial Map
-•	Effective Events Search
-•	Second Hand Listings
-•	Bookmarks/Sharing/Reminders 
-•	Real-time chat (coming soon)
+*	Interactive Geospatial Map of Singapore, with different layovers
+*	Effective Events Search
+*	Second Hand Listings
+*	Bookmarks, Sharing, Reminders for Events
+*	Real-time private chat and chatrooms (Coming Soon)
 
 
 ## Setup (For Developers running on local)
