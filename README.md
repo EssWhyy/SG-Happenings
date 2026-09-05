@@ -55,6 +55,11 @@ npm run dev
 Run both backend and frontend together on VSCode, then access via localhost.
 
 ## Architecture Diagram
+<img width="1662" height="992" alt="SGHappenings Archi Diagram drawio" src="https://github.com/user-attachments/assets/a8117818-5128-49f3-8708-0d61bd59d67e" />
 
 
-## Tradeoffs/What could be Improved
+
+
+## Contributing/Licence
+
+MIT Licence. This project is still currently in development and not released to the public. Any feedback or contributions are welcome!
