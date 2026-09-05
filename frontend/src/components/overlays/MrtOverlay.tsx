@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { Data } from '@react-google-maps/api';
 
-const MRT_GEOJSON_URL = '/data/mrtlines.geojson';
+const MRT_GEOJSON_URL = '/data/mrt-lines.geojson';
 
 export const MrtOverlay: React.FC = () => {
   const onDataLoad = useCallback((data: google.maps.Data) => {

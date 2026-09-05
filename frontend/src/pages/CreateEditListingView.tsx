@@ -174,9 +174,11 @@ export default function CreateEditListingView({
       if (selectedFile) imageUrl = await uploadImageToS3(selectedFile);
 
       if (editingListingId) {
+        
         const payload = {
           title, type, contact, district, description,
-          authorId: cognitoUserId, latitude, longitude, image: imageUrl
+          authorId: cognitoUserId, latitude, longitude, image: imageUrl,
+          emoji: emoji || '📍',
         };
 
         const response = await fetch(`${backendUrl}/api/listings/${editingListingId}`, {

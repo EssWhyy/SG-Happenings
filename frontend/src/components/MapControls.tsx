@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import { Box, Fab, SpeedDial, SpeedDialAction, SpeedDialIcon, Badge } from '@mui/material';
+import { Box, Fab, SpeedDial, SpeedDialAction, SpeedDialIcon, Badge, Tooltip } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import TrainIcon from '@mui/icons-material/Train';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import LocalParkIcon from '@mui/icons-material/Park';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import PersonIcon from '@mui/icons-material/Person';
 
 export interface OverlayConfig {
   id: string;
@@ -33,7 +30,12 @@ export const MapControls: React.FC<MapControlsProps> = ({
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const activeOverlayCount = overlays.filter((o) => o.active).length;
+  // Extract the user filter to render as a dedicated standalone button
+  const myNodesOverlay = overlays.find((o) => o.id === 'myNodesOnly');
+  
+  // Keep map overlays (MRT, Parks, Food, etc.) inside the SpeedDial
+  const mapOverlays = overlays.filter((o) => o.id !== 'myNodesOnly');
+  const activeOverlayCount = mapOverlays.filter((o) => o.active).length;
 
   return (
     <Box
@@ -47,7 +49,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
         gap: 2,
       }}
     >
-      {/* Dynamic Extensible Overlays SpeedDial */}
+      {/* Dynamic Extensible Map Overlays SpeedDial */}
       <SpeedDial
         ariaLabel="Map Overlays"
         icon={
@@ -64,26 +66,47 @@ export const MapControls: React.FC<MapControlsProps> = ({
           size: 'medium',
         }}
       >
-      {overlays.map((overlay) => (
-        <SpeedDialAction
-          key={overlay.id}
-          icon={overlay.icon}
-          slotProps={{
-            tooltip: {
-              title: `${overlay.active ? 'Hide' : 'Show'} ${overlay.name}`,
-            },
-          }}
-          onClick={() => onToggleOverlay(overlay.id)}
-          sx={{
-            backgroundColor: overlay.active ? 'primary.light' : 'background.paper',
-            color: overlay.active ? 'primary.contrastText' : 'text.primary',
-            '&:hover': {
-              backgroundColor: overlay.active ? 'primary.main' : 'action.hover',
-            },
-          }}
-        />
-      ))}
+        {mapOverlays.map((overlay) => (
+          <SpeedDialAction
+            key={overlay.id}
+            icon={overlay.icon}
+            slotProps={{
+              tooltip: {
+                title: `${overlay.active ? 'Hide' : 'Show'} ${overlay.name}`,
+              },
+            }}
+            onClick={() => onToggleOverlay(overlay.id)}
+            sx={{
+              backgroundColor: overlay.active ? 'primary.light' : 'background.paper',
+              color: overlay.active ? 'primary.contrastText' : 'text.primary',
+              '&:hover': {
+                backgroundColor: overlay.active ? 'primary.main' : 'action.hover',
+              },
+            }}
+          />
+        ))}
       </SpeedDial>
+
+      {/* Dedicated Standalone "My Posts" Button */}
+      {myNodesOverlay && (
+        <Tooltip title={myNodesOverlay.active ? "Show All Posts" : "Show My Posts Only"}>
+          <Fab
+            color={myNodesOverlay.active ? 'primary' : 'default'}
+            size="medium"
+            aria-label="filter my posts"
+            onClick={() => onToggleOverlay('myNodesOnly')}
+            sx={{
+              backgroundColor: myNodesOverlay.active ? '#1976d2' : '#ffffff',
+              color: myNodesOverlay.active ? '#ffffff' : '#424242',
+              '&:hover': {
+                backgroundColor: myNodesOverlay.active ? '#1565c0' : '#f5f5f5',
+              },
+            }}
+          >
+            <PersonIcon />
+          </Fab>
+        </Tooltip>
+      )}
 
       {/* Dynamic Add Button */}
       <Fab 

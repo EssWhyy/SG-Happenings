@@ -21,9 +21,10 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 
-export const MapNodeIcon: React.FC<{ emoji?: string; type?: string }> = ({ 
+export const MapNodeIcon: React.FC<{ emoji?: string; type?: string; isOwner?: boolean;}> = ({ 
   emoji = "📍", 
-  type = "Default" 
+  type = "Default",
+  isOwner = false
 }) => {
   const backgroundColor = TYPE_COLORS[type] || TYPE_COLORS.Default;
 
@@ -39,7 +40,7 @@ export const MapNodeIcon: React.FC<{ emoji?: string; type?: string }> = ({
         justifyContent: 'center',
         fontSize: '20px',
         boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
-        border: '2px solid #ffffff',
+        border: isOwner ? '3px solid #16a34a' : '2px solid #ffffff',
         boxSizing: 'border-box',
       }}
     >

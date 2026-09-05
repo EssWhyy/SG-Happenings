@@ -3,16 +3,23 @@ import { GoogleMap, useJsApiLoader, OverlayView } from '@react-google-maps/api';
 import TrainIcon from '@mui/icons-material/Train';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalParkIcon from '@mui/icons-material/Park';
+import LocationCityIcon from '@mui/icons-material/LocationCity';
+import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
+import PersonIcon from '@mui/icons-material/Person';
 
 import MapControls from '../components/MapControls';
 import type { OverlayConfig }  from '../components/MapControls';
 import { MrtOverlay } from '../components/overlays/MrtOverlay';
 import { MapNodeIcon, MapNodeTooltip } from '../components/MapNode';
 import type { Listing } from '../../../shared/apiContract';
+import HawkerCentresOverlay from '../components/overlays/HawkerCentresOverlay';
+import SportsFacilitiesOverlay from '../components/overlays/SportsFacilitiesOverlay';
+import DistrictOverlay from '../components/overlays/DIstrictOverlay';
 
 interface OneMapSingaporeProps {
   listings: Listing[];
   pendingCoords: { lat: number; lng: number } | null;
+  currentUserId?: string;
   onNodeAdded: (lat: number, lng: number) => void;
   onNodeClick: (listingId: string) => void;
 }
@@ -33,7 +40,7 @@ const MAP_CONTAINER_STYLE = {
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
-export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pendingCoords, onNodeAdded, onNodeClick }) => {
+export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pendingCoords, currentUserId, onNodeAdded, onNodeClick }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -43,9 +50,12 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
 
   const [activeOverlays, setActiveOverlays] = useState<Record<string, boolean>>({
-    mrt: true,
-    parks: false,
+    districts: false,
+    mrt: false,
     food: false,
+    sports: false,
+    parks: false,
+    myNodesOnly: false,
   });
 
   const toggleAddEventMode = () => {
@@ -75,19 +85,31 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
   );
 
   const overlayConfigs: OverlayConfig[] = [
+    {
+      id: 'myNodesOnly',
+      name: 'My Posts Only',
+      icon: <PersonIcon />,
+      active: activeOverlays.myNodesOnly,
+    },
+    { id: 'districts', name: 'Neighbourhood Districts', icon: <LocationCityIcon />, active: activeOverlays.districts },
     { id: 'mrt', name: 'MRT Lines', icon: <TrainIcon />, active: activeOverlays.mrt },
-    { id: 'parks', name: 'Parks & Nature', icon: <LocalParkIcon />, active: activeOverlays.parks },
-    { id: 'food', name: 'Food & Dining', icon: <RestaurantIcon />, active: activeOverlays.food },
+    { id: 'food', name: 'Hawker Centres', icon: <RestaurantIcon />, active: activeOverlays.food },
+    { id: 'sports', name: 'Sports Centres', icon: <SportsBasketballIcon />, active: activeOverlays.sports },
+    { id: 'parks', name: 'Parks & Reserves', icon: <LocalParkIcon />, active: activeOverlays.parks },
   ];
+
+  // Filter listings based on current user ID
+  const visibleListings = listings.filter((listing) => {
+    if (activeOverlays.myNodesOnly) {
+      if (!currentUserId) return false;
+      return listing.authorId === currentUserId;
+    }
+    return true;
+  });
 
   if (loadError) return <div>Error loading Google Maps API</div>;
   if (!isLoaded) return <div>Loading Map...</div>;
 
-  console.log('[Map] Rendering map with total persisted listings:', listings.length);
-  console.log('[Map Debug] Current state:', {
-    listingsCount: listings.length,
-    pendingCoords: pendingCoords
-  });
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
       {addEventMode && (
@@ -132,48 +154,55 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
             zoomControl: true,
           }}
         >
+          {activeOverlays.districts && <DistrictOverlay />}
           {activeOverlays.mrt && <MrtOverlay />}
+          {activeOverlays.food && <HawkerCentresOverlay />}
+          {activeOverlays.sports && <SportsFacilitiesOverlay />}
 
-          {/* Render Saved Permanent Listings from DynamoDB */}
-          {listings.map((listing) => (
-            <React.Fragment key={listing.id}>
-              <OverlayView
-                position={{ lat: listing.latitude, lng: listing.longitude }}
-                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                getPixelPositionOffset={(width, height) => ({
-                  x: -(width / 2),
-                  y: -(height / 2),
-                })}
-              >
-                <div
-                  style={{ cursor: 'pointer', fontSize: '24px' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNodeClick(listing.id); // <--- Trigger backend fetch callback
-                  }}
-                  onMouseEnter={() => setHoveredListingId(listing.id)}
-                  onMouseLeave={() => setHoveredListingId(null)}
-                >
-                  <MapNodeIcon emoji="📍" />
-                </div>
-              </OverlayView>
+          {/* Render Filtered Saved Listings */}
+          {visibleListings.map((listing) => {
+            const isOwner = Boolean(currentUserId && listing.authorId === currentUserId);
 
-              {hoveredListingId === listing.id && (
+            return (
+              <React.Fragment key={listing.id}>
                 <OverlayView
                   position={{ lat: listing.latitude, lng: listing.longitude }}
-                  mapPaneName={OverlayView.FLOAT_PANE}
+                  mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
                   getPixelPositionOffset={(width, height) => ({
                     x: -(width / 2),
-                    y: -height - 20,
+                    y: -(height / 2),
                   })}
                 >
-                  <MapNodeTooltip listing={listing} authorName="Local User" />
+                  <div
+                    style={{ cursor: 'pointer', fontSize: '24px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNodeClick(listing.id);
+                    }}
+                    onMouseEnter={() => setHoveredListingId(listing.id)}
+                    onMouseLeave={() => setHoveredListingId(null)}
+                  >
+                    <MapNodeIcon emoji={listing.emoji || "📍"} type={listing.type} isOwner={isOwner}/>
+                  </div>
                 </OverlayView>
-              )}
-            </React.Fragment>
-          ))}
 
-          {/* Render Uncommitted Pending Draft Node */}
+                {hoveredListingId === listing.id && (
+                  <OverlayView
+                    position={{ lat: listing.latitude, lng: listing.longitude }}
+                    mapPaneName={OverlayView.FLOAT_PANE}
+                    getPixelPositionOffset={(width, height) => ({
+                      x: -(width / 2),
+                      y: -height - 20,
+                    })}
+                  >
+                    <MapNodeTooltip listing={listing} authorName="Local User" />
+                  </OverlayView>
+                )}
+              </React.Fragment>
+            );
+          })}
+
+          {/* Render Uncommitted Draft Node */}
           {pendingCoords && pendingCoords.lat && pendingCoords.lng && (
             <OverlayView
               position={{ lat: pendingCoords.lat, lng: pendingCoords.lng }}
@@ -184,7 +213,7 @@ export const OneMapSingapore: React.FC<OneMapSingaporeProps> = ({ listings, pend
               })}
             >
               <div style={{ cursor: 'pointer', opacity: 0.8 }}>
-                <MapNodeIcon emoji="📍" />
+                <MapNodeIcon emoji="📍" type="Default"/>
               </div>
             </OverlayView>
           )}
