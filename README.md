@@ -1,5 +1,5 @@
 # SG Happenings
-A Serverless bulletin Map of Singapore for anyone to share meetups, events, and second-hand trades for free!
+A Serverless bulletin Map of Singapore for anyone here to share meetups, events, and second-hand trades for free! Currently prototyping with a minimal viable product and undergoing further development!
 
 ## Stack
 
@@ -55,9 +55,8 @@ npm run dev
 Run both backend and frontend together on VSCode, then access via localhost.
 
 ## Architecture Diagram
-<img width="1662" height="992" alt="SGHappenings Archi Diagram drawio" src="https://github.com/user-attachments/assets/a8117818-5128-49f3-8708-0d61bd59d67e" />
 
-
+<img width="1761" height="1087" alt="SGHappenings Archi Diagram drawio(1)" src="https://github.com/user-attachments/assets/afae64b0-f849-414a-bf40-3099cd86b85a" />
 
 
 ## Contributing/Licence
