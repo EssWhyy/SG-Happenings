@@ -9,11 +9,13 @@ provider:
     DYNAMODB_TABLE_NAME: ${self:service}-listings-${sls:stage}
     S3_BUCKET_NAME: sg-happenings-s3
     CLOUDFRONT_URL: https://d2yx0dms1vpwng.cloudfront.net
+    OPENSEARCH_ENDPOINT: ${env:OPENSEARCH_ENDPOINT}
   
-  # Permissions for Lambda function (E.g communicate with S3)
+  # lambda Communication Permissions
   iam:
     role:
       statements:
+      # DynamoDB
         - Effect: Allow
           Action:
             - dynamodb:Query
@@ -25,6 +27,23 @@ provider:
           Resource:
             - Fn::GetAtt: [ ListingsTable, Arn ]
             - Fn::Join: [ '/', [ { Fn::GetAtt: [ ListingsTable, Arn ] }, 'index', '*' ] ]
+        # DynamoDB Streams
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeStream
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:ListStreams
+          Resource:
+            - Fn::GetAtt: [ ListingsTable, StreamArn ]
+        # OpenSearch
+        - Effect: Allow
+          Action:
+            - es:ESHttpGet
+            - es:ESHttpPost
+            - es:ESHttpPut
+            - es:ESHttpDelete
+          Resource: "*"
         - Effect: Allow
           Action:
             - s3:PutObject
@@ -54,6 +73,21 @@ functions:
           method: ANY
           cors: true
 
+  streamHandler:
+    handler: streamHandler.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt: [ ListingsTable, StreamArn ]
+          batchSize: 100
+          startingPosition: LATEST
+          filterPatterns:
+            - dynamodb:
+                Keys:
+                  SK:
+                    S: ["METADATA"]
+
 plugins:
   - serverless-offline
 
@@ -62,7 +96,7 @@ custom:
     useHttpApi: true
     noAuth: true
 
-# IAC: Spins up table structure in AWS!
+# IAC: Spins up table structure in AWS
 resources:
   Resources:
     ListingsTable:
@@ -70,6 +104,8 @@ resources:
       Properties:
         TableName: ${self:service}-listings-${sls:stage}
         BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
         AttributeDefinitions:
           - AttributeName: PK
             AttributeType: S

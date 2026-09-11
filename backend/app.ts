@@ -251,4 +251,21 @@ app.post('/api/s3/presigned-url', async (req: Request, res: Response) => {
   }
 });
 
+
+app.get('/api/listings/search', async (req: Request, res: Response) => {
+  try {
+    const q = req.query.q as string;
+    if (!q) {
+      return res.json([]);
+    }
+    const listings = await Db.searchListings(q);
+    res.json(listings);
+  } catch (error) {
+    console.error("Search Listings Error:", error);
+    res.status(500).json({ success: false, error: "Failed to search listings" });
+  }
+});
+
+
+
 export const handler = serverlessExpress({ app });
