@@ -25,7 +25,6 @@ const Transition = React.forwardRef(function Transition(
   return <Grow ref={ref} {...props} />;
 });
 
-// Google SVG Icon component
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24">

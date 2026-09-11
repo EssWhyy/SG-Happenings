@@ -5,7 +5,7 @@ import type { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import serverlessExpress from '@codegenie/serverless-express';
 
-import { mockDb } from './db';
+import { Db } from './db';
 import type { CreateListingRequest, CreateEditListingResponse, Listing, User } from '../shared/apiContract';
 
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
@@ -41,7 +41,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // GET ROUTE: Fetch all users or master listings
 app.get('/api/debug/users', async (req: Request, res: Response) => {
   try {
-    const users = await mockDb.debugGetAllUsers();
+    const users = await Db.debugGetAllUsers();
     res.json(users);
   } catch (error) {
     console.error("Debug Get All Users Error:", error);
@@ -50,14 +50,14 @@ app.get('/api/debug/users', async (req: Request, res: Response) => {
 });
 
 app.get('/api/listings', async (req: Request, res: Response) => {
-  const listings = await mockDb.debugGetAllMasterListings();
+  const listings = await Db.debugGetAllMasterListings();
   res.json(listings);
 });
 
 // AP1: Get, Update and Delete User by Id
 app.get('/api/users/:userId', async (req: Request, res: Response) => {
   const userId = req.params.userId as string;
-  const user = await mockDb.getUserById(userId);
+  const user = await Db.getUserById(userId);
 
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json(user);
@@ -66,7 +66,7 @@ app.get('/api/users/:userId', async (req: Request, res: Response) => {
 app.put('/api/users/:userId', async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId as string;
-    await mockDb.updateUser(userId, req.body);
+    await Db.updateUser(userId, req.body);
     res.json({ success: true, message: "User updated successfully" });
   } catch (error) {
     res.status(500).json({ success: false, error: "Failed to update user" });
@@ -76,7 +76,7 @@ app.put('/api/users/:userId', async (req: Request, res: Response) => {
 app.delete('/api/users/:userId', async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId as string;
-    await mockDb.deleteUser(userId);
+    await Db.deleteUser(userId);
     res.json({ success: true, message: "User deleted successfully" });
   } catch (error) {
     console.error("Delete User Error:", error);
@@ -103,7 +103,7 @@ app.post('/api/users', async (req: Request, res: Response) => {
       isAdmin: body.isAdmin || false
     };
 
-    const savedUser = await mockDb.createUser(newUser);
+    const savedUser = await Db.createUser(newUser);
 
     res.status(201).json({
       success: true,
@@ -120,7 +120,7 @@ app.post('/api/users', async (req: Request, res: Response) => {
 app.get('/api/listings/:listingId', async (req: Request, res: Response) => {
   try {
     const listingId = req.params.listingId as string;
-    const listing = await mockDb.getListingById(listingId);
+    const listing = await Db.getListingById(listingId);
 
     if (!listing) {
       return res.status(404).json({ error: "Listing not found" });
@@ -145,7 +145,7 @@ app.put('/api/listings/:listingId', async (req: Request, res: Response) => {
       createdAt: body.createdAt || new Date().toISOString() 
     };
 
-    const savedListing = await mockDb.updateListing(updatedListing);
+    const savedListing = await Db.updateListing(updatedListing);
     res.json({ success: true, id: savedListing.id, listing: savedListing });
   } catch (error) {
     res.status(500).json({ success: false, error: "Failed to update listing" });
@@ -159,7 +159,7 @@ app.delete('/api/listings/:listingId', async (req: Request, res: Response) => {
 
     if (!authorId) return res.status(400).json({ error: "authorId is required to delete" });
 
-    await mockDb.deleteListing(listingId, authorId);
+    await Db.deleteListing(listingId, authorId);
     res.json({ success: true, id: req.params.listingId });
   } catch (error) {
     res.status(500).json({ success: false, error: "Failed to delete listing" });
@@ -188,7 +188,7 @@ app.post('/api/listings', async (req: Request, res: Response) => {
       expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     };
 
-    const savedListing = await mockDb.saveListing(newListing);
+    const savedListing = await Db.saveListing(newListing);
 
     const responsePayload: CreateEditListingResponse = {
       success: true,
@@ -206,21 +206,21 @@ app.post('/api/listings', async (req: Request, res: Response) => {
 // AP3: Fetch all listings created by a specific user
 app.get('/api/users/:userId/listings', async (req: Request, res: Response) => {
   const userId = req.params.userId as string;
-  const listings = await mockDb.getListingsByUser(userId);
+  const listings = await Db.getListingsByUser(userId);
   res.json(listings);
 });
 
 // AP4: Get Listings by District
 app.get('/api/listings/district/:district', async (req: Request, res: Response) => {
   const districtId = req.params.district as string;
-  const listings = await mockDb.getListingsByDistrict(districtId);
+  const listings = await Db.getListingsByDistrict(districtId);
   res.json(listings);
 });
 
 // AP5: Get Listings by Type
 app.get('/api/listings/type/:type', async (req: Request, res: Response) => {
   const typeId = req.params.type as string;
-  const listings = await mockDb.getListingsByType(typeId);
+  const listings = await Db.getListingsByType(typeId);
   res.json(listings);
 });
 

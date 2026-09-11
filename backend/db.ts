@@ -1,4 +1,3 @@
-// backend/mockDb.ts
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { 
   DeleteCommand,
@@ -25,7 +24,7 @@ export interface DynamoDBItem {
   [key: string]: any;
 }
 
-export const mockDb = {
+export const Db = {
   
   //AP1: Get user by Id
   getUserById: async (userId: string): Promise<any | null> => {

@@ -14,9 +14,9 @@ export interface MapNodeProps {
 
 
 const TYPE_COLORS: Record<string, string> = {
-  Sale: '#23cc93',    // Green
-  Event: '#8aade5',   // Blue
-  Wanted: '#eeb85c',  // Amber
+  Sale: '#23cc93',
+  Event: '#8aade5',
+  Wanted: '#eeb85c',
   Default: '#ffffff',
 };
 

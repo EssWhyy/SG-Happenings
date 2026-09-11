@@ -13,7 +13,6 @@ export function getUserAvatarUrl(userProfile?: Record<string, any>): string | nu
     const cleanEmail = userProfile.email.trim().toLowerCase();
     const hash = CryptoJS.SHA256(cleanEmail).toString();
     
-    // 'd=identicon' generates a random geometric avatar pattern unique to that email hash.
     return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=80`;
   }
 

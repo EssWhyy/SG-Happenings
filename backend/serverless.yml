@@ -4,12 +4,13 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: ap-southeast-1
-  # 1. Environment variables available to your code via process.env
+
   environment:
     DYNAMODB_TABLE_NAME: ${self:service}-listings-${sls:stage}
     S3_BUCKET_NAME: sg-happenings-s3
     CLOUDFRONT_URL: https://d2yx0dms1vpwng.cloudfront.net
-  # 2. Grant permissions to your Lambda function to talk to DynamoDB and S3
+  
+  # Permissions for Lambda function (E.g communicate with S3)
   iam:
     role:
       statements:
@@ -61,7 +62,7 @@ custom:
     useHttpApi: true
     noAuth: true
 
-# 3. Infrastructure as Code: Automatically spins up your exact table structure in AWS!
+# IAC: Spins up table structure in AWS!
 resources:
   Resources:
     ListingsTable:
