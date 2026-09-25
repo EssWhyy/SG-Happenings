@@ -1,5 +1,5 @@
 // App.tsx
-import { useEffect, useState, createContext, useContext } from 'react';
+import { useEffect, useState, createContext, useContext, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { AuthProviderProps } from 'react-oidc-context';
@@ -42,11 +42,10 @@ function MainLayout() {
   const auth = useAuth();
   
   const currentUserId = auth.isAuthenticated 
-  ? (auth.user?.profile?.sub || (auth.user?.profile as any)?.user_id || auth.user?.profile?.email) 
-  : undefined;
+    ? (auth.user?.profile?.sub || (auth.user?.profile as any)?.user_id || auth.user?.profile?.email) 
+    : undefined;
 
-// Add this log to verify what ID Google OAuth is giving you in the browser console:
-console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', currentUserId);
+  console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', currentUserId);
 
   const backendUrl = import.meta.env.VITE_API_URL;
 
@@ -59,11 +58,11 @@ console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', c
   const [dashboardView, setDashboardView] = useState<DashboardView>('bookmark');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
-  // Lift listings state so both Map and Dashboard share DynamoDB data
+  // Lift listings state so both Map and Dashboard share DynamoDB/OpenSearch data
   const [listings, setListings] = useState<Listing[]>([]);
 
   // 1. Fetch initial DynamoDB listings on application mount
-  const fetchListings = async () => {
+  const fetchListings = useCallback(async () => {
     try {
       console.log('[App] Fetching initial listings from DynamoDB backend...');
       const res = await fetch(`${backendUrl}/api/listings`);
@@ -74,11 +73,32 @@ console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', c
     } catch (err) {
       console.error('[App] Error fetching initial listings:', err);
     }
-  };
+  }, [backendUrl]);
 
   useEffect(() => {
     fetchListings();
-  }, [backendUrl]);
+  }, [fetchListings]);
+
+  // 2. Search Handler connected to AWS OpenSearch Backend
+  const handleSearch = async (query: string) => {
+    // If search is cleared, reload all listings from DynamoDB
+    if (!query.trim()) {
+      fetchListings();
+      return;
+    }
+
+    try {
+      console.log(`[App] Searching OpenSearch endpoint for: "${query}"`);
+      const res = await fetch(`${backendUrl}/api/listings/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error('Search request failed');
+      
+      const searchResults: Listing[] = await res.json();
+      console.log(`[App] Received ${searchResults.length} search results from OpenSearch:`, searchResults);
+      setListings(searchResults);
+    } catch (err) {
+      console.error('[App] Error executing OpenSearch query:', err);
+    }
+  };
 
   // Handler for Header Bookmark button click
   const handleOpenBookmarks = () => {
@@ -88,7 +108,7 @@ console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', c
     setIsSidebarOpen(true);
   };
 
-  // Handler for Header Profile button click: opens modal if logged out, toggles dashboard if logged in
+  // Handler for Header Profile button click
   const handleToggleProfile = () => {
     if (!auth.isAuthenticated) {
       setIsLoginModalOpen(true);
@@ -97,7 +117,7 @@ console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', c
     setIsSidebarOpen((prev) => !prev);
   };
 
-  // 2. Triggered when a new node placement is initiated on the map (Create Mode)
+  // Triggered when a new node placement is initiated on the map (Create Mode)
   const handleNodeAddedOnMap = (lat: number, lng: number) => {
     console.log('[App] New node location clicked on map at:', { lat, lng });
     setSelectedListing(null);
@@ -106,7 +126,7 @@ console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', c
     setIsSidebarOpen(true);
   };
 
-  // 3. Triggered when an existing node on the map is clicked (View Mode)
+  // Triggered when an existing node on the map is clicked (View Mode)
   const handleMapNodeClick = async (listingId: string) => {
     try {
       console.log(`[App] Fetching listing details for ID: ${listingId}`);
@@ -124,7 +144,7 @@ console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', c
     }
   };
 
-  // 4. Triggered when clicking an Edit button inside View mode or Bookmark list
+  // Triggered when clicking an Edit button inside View mode or Bookmark list
   const handleEditListing = (listing: Listing) => {
     setSelectedListing(listing);
     setPendingCoords(null);
@@ -132,7 +152,7 @@ console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', c
     setIsSidebarOpen(true);
   };
 
-  // 5. Triggered when selecting a card from the Bookmark listing
+  // Triggered when selecting a card from the Bookmark listing
   const handleSelectListing = (listing: Listing) => {
     setSelectedListing(listing);
     setDashboardView('view');
@@ -146,7 +166,7 @@ console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', c
     setIsSidebarOpen(false);
   };
 
-  // Add/update listing to state upon successful deployment so it persists on the map
+  // Add/update listing to state upon successful deployment
   const handleDeploySuccess = (newListing?: Listing) => {
     console.log('[App] Listing successfully deployed to DynamoDB:', newListing);
     if (newListing) {
@@ -209,6 +229,7 @@ console.log('[Auth Debug] Authenticated:', auth.isAuthenticated, '| User ID:', c
               <Header 
                 onBookmarkClick={handleOpenBookmarks}
                 onProfileClick={handleToggleProfile}
+                onSearch={handleSearch}
                 userAvatarUrl={avatarUrl}
               />
 

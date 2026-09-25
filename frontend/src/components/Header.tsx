@@ -16,14 +16,13 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Debounce search input to avoid hitting endpoint on every keystroke
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (onSearch) onSearch(searchQuery);
+      if (onSearch) onSearch(searchQuery); // only fire on input change
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, onSearch]);
+  }, []);
 
   return (
     <header style={{
