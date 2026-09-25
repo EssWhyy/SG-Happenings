@@ -1,5 +1,5 @@
 // frontend/src/components/Header.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface HeaderProps {
   userAvatarUrl?: string | null;
@@ -15,15 +15,21 @@ export const Header: React.FC<HeaderProps> = ({
   onSearch 
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // Skip execution if searchQuery is empty on initial mount
+    // Skip running on the very first page load
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
       if (onSearch) onSearch(searchQuery);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, onSearch]);
+  }, [searchQuery]); // Removed onSearch from dependencies so it doesn't trigger endless loops
 
   return (
     <header style={{
