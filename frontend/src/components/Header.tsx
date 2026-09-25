@@ -17,12 +17,13 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    // Skip execution if searchQuery is empty on initial mount
     const timer = setTimeout(() => {
-      if (onSearch) onSearch(searchQuery); // only fire on input change
+      if (onSearch) onSearch(searchQuery);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [searchQuery, onSearch]);
 
   return (
     <header style={{

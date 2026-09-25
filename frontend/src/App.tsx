@@ -80,7 +80,7 @@ function MainLayout() {
   }, [fetchListings]);
 
   // 2. Search Handler connected to AWS OpenSearch Backend
-  const handleSearch = async (query: string) => {
+  const handleSearch = useCallback(async (query: string) => {
     // If search is cleared, reload all listings from DynamoDB
     if (!query.trim()) {
       fetchListings();
@@ -89,7 +89,7 @@ function MainLayout() {
 
     try {
       console.log(`[App] Searching OpenSearch endpoint for: "${query}"`);
-      const res = await fetch(`${backendUrl}/api/listings/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`${backendUrl}/api/listings?q=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error('Search request failed');
       
       const searchResults: Listing[] = await res.json();
@@ -98,7 +98,7 @@ function MainLayout() {
     } catch (err) {
       console.error('[App] Error executing OpenSearch query:', err);
     }
-  };
+  }, [backendUrl, fetchListings]);
 
   // Handler for Header Bookmark button click
   const handleOpenBookmarks = () => {

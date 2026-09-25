@@ -301,13 +301,15 @@ export const Db = {
         query: {
           multi_match: {
             query: query,
-            fields: ['title^2', 'description'], // Give higher weight to title matches
+            fields: ['title^2', 'description'],
             fuzziness: 'AUTO'
           }
         }
       }
     });
 
-    return response.body.hits.hits.map((hit: any) => hit._source as Listing);
+    // Handle both JS client wrapper formats safely
+    const hits = (response as any).body?.hits?.hits || (response as any).hits?.hits || [];
+    return hits.map((hit: any) => hit._source as Listing);
   }
 };

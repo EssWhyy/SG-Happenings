@@ -26,7 +26,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Main request handler
+// Main request handler for parsing raw body buffers
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (Buffer.isBuffer(req.body)) {
     try {
@@ -38,8 +38,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// GET ROUTE: Fetch all users or master listings
-app.get('/api/debug/users', async (req: Request, res: Response) => {
+/* ==========================================================================
+   USER ROUTES
+   ========================================================================== */
+
+// GET /api/users - Fetch users (Supports debug mode via query parameter)
+app.get('/api/users', async (req: Request, res: Response) => {
   try {
     const users = await Db.debugGetAllUsers();
     res.json(users);
@@ -49,41 +53,7 @@ app.get('/api/debug/users', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/listings', async (req: Request, res: Response) => {
-  const listings = await Db.debugGetAllMasterListings();
-  res.json(listings);
-});
-
-// AP1: Get, Update and Delete User by Id
-app.get('/api/users/:userId', async (req: Request, res: Response) => {
-  const userId = req.params.userId as string;
-  const user = await Db.getUserById(userId);
-
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user);
-});
-
-app.put('/api/users/:userId', async (req: Request, res: Response) => {
-  try {
-    const userId = req.params.userId as string;
-    await Db.updateUser(userId, req.body);
-    res.json({ success: true, message: "User updated successfully" });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to update user" });
-  }
-});
-
-app.delete('/api/users/:userId', async (req: Request, res: Response) => {
-  try {
-    const userId = req.params.userId as string;
-    await Db.deleteUser(userId);
-    res.json({ success: true, message: "User deleted successfully" });
-  } catch (error) {
-    console.error("Delete User Error:", error);
-    res.status(500).json({ success: false, error: "Failed to delete user" });
-  }
-});
-
+// POST /api/users - Create a new user
 app.post('/api/users', async (req: Request, res: Response) => {
   try {
     console.log("Incoming Create User Body:", req.body);
@@ -116,56 +86,83 @@ app.post('/api/users', async (req: Request, res: Response) => {
   }
 });
 
-// AP2: Create, Update, and Delete Listing 
-app.get('/api/listings/:listingId', async (req: Request, res: Response) => {
-  try {
-    const listingId = req.params.listingId as string;
-    const listing = await Db.getListingById(listingId);
+// GET /api/users/:userId - Fetch a user by ID
+app.get('/api/users/:userId', async (req: Request, res: Response) => {
+  const userId = req.params.userId as string;
+  const user = await Db.getUserById(userId);
 
-    if (!listing) {
-      return res.status(404).json({ error: "Listing not found" });
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json(user);
+});
+
+// PUT /api/users/:userId - Update user details
+app.put('/api/users/:userId', async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.userId as string;
+    await Db.updateUser(userId, req.body);
+    res.json({ success: true, message: "User updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to update user" });
+  }
+});
+
+// DELETE /api/users/:userId - Delete a user
+app.delete('/api/users/:userId', async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.userId as string;
+    await Db.deleteUser(userId);
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Delete User Error:", error);
+    res.status(500).json({ success: false, error: "Failed to delete user" });
+  }
+});
+
+// GET /api/users/:userId/listings - Fetch listings created by a specific user (Nested Resource)
+app.get('/api/users/:userId/listings', async (req: Request, res: Response) => {
+  const userId = req.params.userId as string;
+  const listings = await Db.getListingsByUser(userId);
+  res.json(listings);
+});
+
+
+/* ==========================================================================
+   LISTING ROUTES
+   ========================================================================== */
+
+// GET /api/listings - Collection endpoint supporting default fetch, search, and filtering via Query Params
+app.get('/api/listings', async (req: Request, res: Response) => {
+  try {
+    const { district, type, q } = req.query;
+
+    // Filter by Search Query
+    if (q) {
+      const listings = await Db.searchListings(q as string);
+      return res.json(listings);
     }
-    res.json(listing);
+
+    // Filter by District
+    if (district) {
+      const listings = await Db.getListingsByDistrict(district as string);
+      return res.json(listings);
+    }
+
+    // Filter by Type
+    if (type) {
+      const listings = await Db.getListingsByType(type as string);
+      return res.json(listings);
+    }
+
+    // Default: Return all master listings
+    const listings = await Db.debugGetAllMasterListings();
+    res.json(listings);
   } catch (error) {
-    console.error("Get Listing Error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch listing" });
+    console.error("Fetch Listings Error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch listings" });
   }
 });
 
-app.put('/api/listings/:listingId', async (req: Request, res: Response) => {
-  try {
-    const { listingId } = req.params;
-    const body = req.body;
-
-    const updatedListing: Listing = {
-      ...body,
-      id: listingId,
-      image: body.image ?? "",
-      emoji: body.emoji || "📍",
-      createdAt: body.createdAt || new Date().toISOString() 
-    };
-
-    const savedListing = await Db.updateListing(updatedListing);
-    res.json({ success: true, id: savedListing.id, listing: savedListing });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to update listing" });
-  }
-});
-
-app.delete('/api/listings/:listingId', async (req: Request, res: Response) => {
-  try {
-    const { authorId } = req.body;
-    const listingId = req.params.listingId as string;
-
-    if (!authorId) return res.status(400).json({ error: "authorId is required to delete" });
-
-    await Db.deleteListing(listingId, authorId);
-    res.json({ success: true, id: req.params.listingId });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to delete listing" });
-  }
-});
-
+// POST /api/listings - Create a new listing
 app.post('/api/listings', async (req: Request, res: Response) => {
   try {
     console.log("Incoming Frontend Body:", req.body);
@@ -203,28 +200,64 @@ app.post('/api/listings', async (req: Request, res: Response) => {
   }
 });
 
-// AP3: Fetch all listings created by a specific user
-app.get('/api/users/:userId/listings', async (req: Request, res: Response) => {
-  const userId = req.params.userId as string;
-  const listings = await Db.getListingsByUser(userId);
-  res.json(listings);
+// GET /api/listings/:listingId - Fetch single listing by ID
+app.get('/api/listings/:listingId', async (req: Request, res: Response) => {
+  try {
+    const listingId = req.params.listingId as string;
+    const listing = await Db.getListingById(listingId);
+
+    if (!listing) {
+      return res.status(404).json({ error: "Listing not found" });
+    }
+    res.json(listing);
+  } catch (error) {
+    console.error("Get Listing Error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch listing" });
+  }
 });
 
-// AP4: Get Listings by District
-app.get('/api/listings/district/:district', async (req: Request, res: Response) => {
-  const districtId = req.params.district as string;
-  const listings = await Db.getListingsByDistrict(districtId);
-  res.json(listings);
+// PUT /api/listings/:listingId - Update single listing by ID
+app.put('/api/listings/:listingId', async (req: Request, res: Response) => {
+  try {
+    const { listingId } = req.params;
+    const body = req.body;
+
+    const updatedListing: Listing = {
+      ...body,
+      id: listingId,
+      image: body.image ?? "",
+      emoji: body.emoji || "📍",
+      createdAt: body.createdAt || new Date().toISOString() 
+    };
+
+    const savedListing = await Db.updateListing(updatedListing);
+    res.json({ success: true, id: savedListing.id, listing: savedListing });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to update listing" });
+  }
 });
 
-// AP5: Get Listings by Type
-app.get('/api/listings/type/:type', async (req: Request, res: Response) => {
-  const typeId = req.params.type as string;
-  const listings = await Db.getListingsByType(typeId);
-  res.json(listings);
+// DELETE /api/listings/:listingId - Delete listing by ID
+app.delete('/api/listings/:listingId', async (req: Request, res: Response) => {
+  try {
+    const { authorId } = req.body;
+    const listingId = req.params.listingId as string;
+
+    if (!authorId) return res.status(400).json({ error: "authorId is required to delete" });
+
+    await Db.deleteListing(listingId, authorId);
+    res.json({ success: true, id: req.params.listingId });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to delete listing" });
+  }
 });
 
-// S3 Upload Presigned URL Generator
+
+/* ==========================================================================
+   MEDIA / INTEGRATION ROUTES
+   ========================================================================== */
+
+// POST /api/s3/presigned-url - Generate presigned S3 upload URL
 app.post('/api/s3/presigned-url', async (req: Request, res: Response) => {
   try {
     const { fileType } = req.body;
@@ -250,22 +283,5 @@ app.post('/api/s3/presigned-url', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to generate upload URL' });
   }
 });
-
-
-app.get('/api/listings/search', async (req: Request, res: Response) => {
-  try {
-    const q = req.query.q as string;
-    if (!q) {
-      return res.json([]);
-    }
-    const listings = await Db.searchListings(q);
-    res.json(listings);
-  } catch (error) {
-    console.error("Search Listings Error:", error);
-    res.status(500).json({ success: false, error: "Failed to search listings" });
-  }
-});
-
-
 
 export const handler = serverlessExpress({ app });

@@ -1,3 +1,4 @@
+// BookmarkDirectoryView.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
@@ -29,6 +30,7 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 
 import type { Listing, User } from '../../../shared/apiContract';
 import { useAuth } from 'react-oidc-context';
+
 interface BookmarkDirectoryViewProps {
   backendUrl: string;
   cognitoUserId: string;
@@ -49,7 +51,6 @@ export default function BookmarkDirectoryView({
   onEditListing,
   setStatusMessage,
   onOpenLogin
-
 }: BookmarkDirectoryViewProps) {
   const [activeTab, setActiveTab] = useState<'listings' | 'users'>('listings');
   const [users, setUsers] = useState<User[]>([]);
@@ -62,7 +63,7 @@ export default function BookmarkDirectoryView({
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await fetch(`${backendUrl}/api/debug/users`);
+      const res = await fetch(`${backendUrl}/api/users`);
       if (!res.ok) throw new Error('Failed to fetch users');
       const data: User[] = await res.json();
       setUsers(data);
@@ -80,9 +81,9 @@ export default function BookmarkDirectoryView({
       if (showOnlyMyListings && cognitoUserId) {
         endpoint = `${backendUrl}/api/users/${cognitoUserId}/listings`;
       } else if (selectedDistrict !== 'All') {
-        endpoint = `${backendUrl}/api/listings/district/${selectedDistrict}`;
+        endpoint = `${backendUrl}/api/listings?district=${encodeURIComponent(selectedDistrict)}`;
       } else if (selectedType !== 'All') {
-        endpoint = `${backendUrl}/api/listings/type/${selectedType}`;
+        endpoint = `${backendUrl}/api/listings?type=${encodeURIComponent(selectedType)}`;
       }
 
       const res = await fetch(endpoint);
@@ -134,44 +135,43 @@ export default function BookmarkDirectoryView({
     }
   };
 
-
-    if (!auth.isAuthenticated) {
-      return (
-        <Box
+  if (!auth.isAuthenticated) {
+    return (
+      <Box
+        sx={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          textAlign: 'center',
+          p: 4,
+          bgcolor: '#ffffff',
+          color: '#1e293b',
+          boxSizing: 'border-box',
+          gap: 2,
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 600, color: '#0f172a', maxWidth: '300px' }}>
+          Please login to Bookmark listings on SG Happenings!
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={onOpenLogin}
           sx={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            textAlign: 'center',
-            p: 4,
-            bgcolor: '#ffffff',
-            color: '#1e293b',
-            boxSizing: 'border-box',
-            gap: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            px: 3,
+            bgcolor: '#2563eb',
+            '&:hover': { bgcolor: '#1d4ed8' },
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#0f172a', maxWidth: '300px' }}>
-            Please login to Bookmark listings on SG Happenings!
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={onOpenLogin}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3,
-              bgcolor: '#2563eb',
-              '&:hover': { bgcolor: '#1d4ed8' },
-            }}
-          >
-            Open Login
-          </Button>
-        </Box>
-      );
-    }
+          Open Login
+        </Button>
+      </Box>
+    );
+  }
     
   return (
     <Box
@@ -259,47 +259,47 @@ export default function BookmarkDirectoryView({
                 FILTER SCOPE
               </Typography>
 
-            <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1.5}
-            sx={{ alignItems: { sm: 'center' } }}
-            >
-            <FormControl fullWidth size="small" disabled={showOnlyMyListings}>
-                <InputLabel id="district-filter-label">District Target</InputLabel>
-                <Select
-                labelId="district-filter-label"
-                value={selectedDistrict}
-                label="District Target"
-                onChange={(e) => {
-                    setSelectedDistrict(e.target.value);
-                    setSelectedType('All');
-                }}
-                >
-                <MenuItem value="All">All Regions</MenuItem>
-                <MenuItem value="Central">Central</MenuItem>
-                <MenuItem value="East">East</MenuItem>
-                <MenuItem value="North">North</MenuItem>
-                </Select>
-            </FormControl>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1.5}
+                sx={{ alignItems: { sm: 'center' } }}
+              >
+                <FormControl fullWidth size="small" disabled={showOnlyMyListings}>
+                  <InputLabel id="district-filter-label">District Target</InputLabel>
+                  <Select
+                    labelId="district-filter-label"
+                    value={selectedDistrict}
+                    label="District Target"
+                    onChange={(e) => {
+                      setSelectedDistrict(e.target.value);
+                      setSelectedType('All');
+                    }}
+                  >
+                    <MenuItem value="All">All Regions</MenuItem>
+                    <MenuItem value="Central">Central</MenuItem>
+                    <MenuItem value="East">East</MenuItem>
+                    <MenuItem value="North">North</MenuItem>
+                  </Select>
+                </FormControl>
 
-            <FormControl fullWidth size="small" disabled={showOnlyMyListings}>
-                <InputLabel id="type-filter-label">Classification</InputLabel>
-                <Select
-                labelId="type-filter-label"
-                value={selectedType}
-                label="Classification"
-                onChange={(e) => {
-                    setSelectedType(e.target.value);
-                    setSelectedDistrict('All');
-                }}
-                >
-                <MenuItem value="All">All Operations</MenuItem>
-                <MenuItem value="Sale">Sale</MenuItem>
-                <MenuItem value="Event">Event</MenuItem>
-                <MenuItem value="Wanted">Wanted</MenuItem>
-                </Select>
-            </FormControl>
-            </Stack>
+                <FormControl fullWidth size="small" disabled={showOnlyMyListings}>
+                  <InputLabel id="type-filter-label">Classification</InputLabel>
+                  <Select
+                    labelId="type-filter-label"
+                    value={selectedType}
+                    label="Classification"
+                    onChange={(e) => {
+                      setSelectedType(e.target.value);
+                      setSelectedDistrict('All');
+                    }}
+                  >
+                    <MenuItem value="All">All Operations</MenuItem>
+                    <MenuItem value="Sale">Sale</MenuItem>
+                    <MenuItem value="Event">Event</MenuItem>
+                    <MenuItem value="Wanted">Wanted</MenuItem>
+                  </Select>
+                </FormControl>
+              </Stack>
 
               <FormControlLabel
                 control={
