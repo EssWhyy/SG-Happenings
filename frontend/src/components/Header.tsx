@@ -1,16 +1,36 @@
-import React from 'react';
+// frontend/src/components/Header.tsx
+import React, { useState, useEffect, useRef } from 'react';
 
 interface HeaderProps {
   userAvatarUrl?: string | null;
   onBookmarkClick?: () => void;
   onProfileClick?: () => void;
+  onSearch?: (query: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   userAvatarUrl, 
   onBookmarkClick, 
-  onProfileClick 
+  onProfileClick,
+  onSearch 
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    // Skip running on the very first page load
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (onSearch) onSearch(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]); // Removed onSearch from dependencies so it doesn't trigger endless loops
+
   return (
     <header style={{
       width: '100%',
@@ -24,7 +44,8 @@ export const Header: React.FC<HeaderProps> = ({
       boxSizing: 'border-box',
       position: 'relative',
       zIndex: 1000,
-      fontFamily: 'system-ui, -apple-system, sans-serif'
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      gap: '12px'
     }}>
       {/* Left Action: Bookmark */}
       <button 
@@ -35,17 +56,33 @@ export const Header: React.FC<HeaderProps> = ({
         🔖
       </button>
 
-      {/* Center Title */}
-      <h1 style={{
-        margin: 0,
-        fontSize: '1.1rem',
-        fontWeight: 600,
-        color: '#333',
-        textAlign: 'center',
-        flex: 1
-      }}>
-        SG Happenings: Free Events, Hangs and Second-Hand in Singapore
-      </h1>
+      {/* Center Title & Search Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+        <h1 style={{
+          margin: 0,
+          fontSize: '1rem',
+          fontWeight: 600,
+          color: '#333',
+          whiteSpace: 'nowrap'
+        }}>
+          SG Happenings
+        </h1>
+
+        <input
+          type="text"
+          placeholder="Search listings by title or description..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            flex: 1,
+            padding: '6px 12px',
+            borderRadius: '16px',
+            border: '1px solid #ccc',
+            fontSize: '0.875rem',
+            outline: 'none'
+          }}
+        />
+      </div>
 
       {/* Right Action: Profile / Login */}
       <button 

@@ -11,6 +11,13 @@ import {
 import type {  QueryCommandOutput,
   ScanCommandOutput} from "@aws-sdk/lib-dynamodb";
 import type { Listing, User } from '../shared/apiContract';
+import { Client } from '@opensearch-project/opensearch';
+
+const openSearchClient = new Client({
+  node: process.env.OPENSEARCH_ENDPOINT || ''
+});
+
+
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -284,4 +291,25 @@ export const Db = {
     const response = (await docClient.send(command)) as ScanCommandOutput;
     return (response.Items || []) as unknown as User[];
   },
+
+  searchListings: async (query: string): Promise<Listing[]> => {
+    if (!query || !query.trim()) return [];
+
+    const response = await openSearchClient.search({
+      index: 'listings',
+      body: {
+        query: {
+          multi_match: {
+            query: query,
+            fields: ['title^2', 'description'],
+            fuzziness: 'AUTO'
+          }
+        }
+      }
+    });
+
+    // Handle both JS client wrapper formats safely
+    const hits = (response as any).body?.hits?.hits || (response as any).hits?.hits || [];
+    return hits.map((hit: any) => hit._source as Listing);
+  }
 };

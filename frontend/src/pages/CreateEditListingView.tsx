@@ -1,3 +1,4 @@
+// CreateEditListingView.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -174,7 +175,6 @@ export default function CreateEditListingView({
       if (selectedFile) imageUrl = await uploadImageToS3(selectedFile);
 
       if (editingListingId) {
-        
         const payload = {
           title, type, contact, district, description,
           authorId: cognitoUserId, latitude, longitude, image: imageUrl,
