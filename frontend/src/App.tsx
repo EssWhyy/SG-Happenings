@@ -209,6 +209,13 @@ function MainLayout() {
     setIsLoginModalOpen(true);
   };
 
+  // Triggered when clicking the Chat button inside View listing detail
+  const handleChat = (listing: Listing) => {
+    setSelectedListing(listing);
+    setDashboardView('chat');
+    setIsSidebarOpen(true);
+  };
+
   if (auth.isLoading) {
     return <div className="loading-screen">Loading authentication...</div>;
   }
@@ -268,6 +275,7 @@ function MainLayout() {
                       onSelectListing={handleSelectListing}
                       onEditListing={handleEditListing}
                       onLogout={handleLogout} 
+                      onChat={handleChat}
                       pendingCoords={pendingCoords}
                       onSuccess={handleDeploySuccess}
                       onClose={handleCloseSidebar}

@@ -64,7 +64,6 @@ export default function ViewListingDetail({
         gap: 2,
       }}
     >
-      {/* Top Navigation Bar: Close & Edit */}
       <Box
         sx={{
           display: 'flex',
@@ -89,7 +88,6 @@ export default function ViewListingDetail({
         )}
       </Box>
 
-      {/* Media Image / Placeholder */}
       <Box
         sx={{
           width: '100%',
@@ -127,12 +125,10 @@ export default function ViewListingDetail({
         )}
       </Box>
 
-      {/* (Type) + Title */}
       <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
         ({selectedListing.type}) {selectedListing.title}
       </Typography>
 
-      {/* Author & Date / Time */}
       <Box
         sx={{
           display: 'flex',
@@ -159,7 +155,6 @@ export default function ViewListingDetail({
         </Box>
       </Box>
 
-      {/* Location */}
       <Box
         sx={{
           display: 'flex',
@@ -173,7 +168,6 @@ export default function ViewListingDetail({
         <Typography variant="body2">{coordinatesText}</Typography>
       </Box>
 
-      {/* Action Buttons: Chat & Bookmark */}
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mt: 0.5 }}>
         <Button
           fullWidth
@@ -195,7 +189,6 @@ export default function ViewListingDetail({
         </Button>
       </Box>
 
-      {/* Description Section */}
       <Paper
         variant="outlined"
         sx={{
@@ -213,7 +206,6 @@ export default function ViewListingDetail({
         </Typography>
       </Paper>
 
-      {/* Report Event Button */}
       <Button
         fullWidth
         variant="outlined"

@@ -3,12 +3,14 @@ import type { Listing } from '../../../shared/apiContract';
 import CreateEditListingView from './CreateEditListingView';
 import BookmarkDirectoryView from './BookmarkDirectoryView';
 import ViewListingDetail from './ViewListingDetail';
+import ChatView from './ChatView';
 import './styles/dashboard.scss';
 
-export type DashboardView = 'create_edit' | 'bookmark' | 'view';
+export type DashboardView = 'create_edit' | 'bookmark' | 'view' | 'chat';
 
 interface DashboardProps {
   view: DashboardView;
+  setView?: (view: DashboardView) => void;
   listings: Listing[];
   setListings: React.Dispatch<React.SetStateAction<Listing[]>>;
   onLogout: () => void;
@@ -18,11 +20,13 @@ interface DashboardProps {
   selectedListing?: Listing | null;
   onSelectListing?: (listing: Listing) => void;
   onEditListing?: (listing: Listing) => void;
+  onChat?: (listing: Listing) => void;
   onOpenLogin?: () => void;
 }
 
 export default function Dashboard({
   view,
+  setView,
   listings,
   setListings,
   onLogout,
@@ -32,12 +36,21 @@ export default function Dashboard({
   selectedListing,
   onSelectListing,
   onEditListing,
+  onChat,
   onOpenLogin
 }: DashboardProps) {
   const backendUrl = import.meta.env.VITE_API_URL;
   const auth = useAuth();
   const cognitoUserEmail = auth.user?.profile?.email || 'Unknown User';
   const cognitoUserId = auth.user?.profile?.sub || '';
+
+  const handleChat = (listing: Listing) => {
+    if (onChat) {
+      onChat(listing);
+    } else if (setView) {
+      setView('chat');
+    }
+  };
 
   return (
     <div className="dashboard-container">
@@ -83,6 +96,16 @@ export default function Dashboard({
           cognitoUserId={cognitoUserId}
           onEditListing={onEditListing}
           onClose={onClose}
+          onChat={handleChat}
+        />
+      )}
+
+      {view === 'chat' && selectedListing && (
+        <ChatView
+          listing={selectedListing}
+          currentUserId={cognitoUserId}
+          currentUserEmail={cognitoUserEmail}
+          onBack={() => setView && setView('view')}
         />
       )}
     </div>
