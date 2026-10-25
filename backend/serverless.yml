@@ -5,7 +5,7 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: ap-southeast-1
-
+  
   environment:
     DYNAMODB_TABLE_NAME: ${self:service}-listings-${sls:stage}
     S3_BUCKET_NAME: sg-happenings-s3
@@ -63,16 +63,14 @@ build:
 
 functions:
   api:
-    handler: app.handler
+    handler: application/app.handler
     events:
       - httpApi:
           path: '/{proxy+}'
           method: ANY
-          cors: true
       - httpApi:
           path: '/'
           method: ANY
-          cors: true
 
   streamHandler:
     handler: streamHandler.handler

@@ -10,7 +10,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type {  QueryCommandOutput,
   ScanCommandOutput} from "@aws-sdk/lib-dynamodb";
-import type { Listing, User } from '../shared/apiContract';
+import type { Listing, User } from '../../shared/apiContract';
 import { Client } from '@opensearch-project/opensearch';
 
 const openSearchClient = new Client({

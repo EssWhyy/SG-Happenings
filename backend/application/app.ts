@@ -5,11 +5,14 @@ import type { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import serverlessExpress from '@codegenie/serverless-express';
 
-import { Db } from './db';
-import type { CreateListingRequest, CreateEditListingResponse, Listing, User } from '../shared/apiContract';
+import { Db } from '../infrastructure/db';
+import type { CreateListingRequest, CreateEditListingResponse, Listing, User } from '../../shared/apiContract';
 
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { debugRouter } from './debug';
+
+
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'ap-southeast-1' });
 const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'sg-happenings-s3';
@@ -37,6 +40,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   next();
 });
+
+// Mount the debug routes under /api/debug
+app.use('/api/debug', debugRouter);
 
 /* ==========================================================================
    USER ROUTES
