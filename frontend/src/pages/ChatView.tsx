@@ -10,6 +10,7 @@ interface ChatViewProps {
   listing: Listing;
   currentUserId: string; // cognito
   currentUserEmail: string;
+  recipientId?: string;
   onBack: () => void;
 }
 
@@ -22,12 +23,12 @@ interface Message {
   created_at: string;
 }
 
-export default function ChatView({ listing, currentUserId, currentUserEmail, onBack }: ChatViewProps) {
+export default function ChatView({ listing, currentUserId, currentUserEmail, recipientId: propRecipientId, onBack }: ChatViewProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const recipientId = listing.authorId;
+  const recipientId = propRecipientId || listing.authorId;
   const recipientName = listing.contact || recipientId;
 
   // 1. Fetch initial message history & Subscribe to Realtime changes

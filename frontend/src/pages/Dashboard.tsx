@@ -1,12 +1,14 @@
+import { useState } from 'react';
 import { useAuth } from 'react-oidc-context';
 import type { Listing } from '../../../shared/apiContract';
 import CreateEditListingView from './CreateEditListingView';
 import BookmarkDirectoryView from './BookmarkDirectoryView';
 import ViewListingDetail from './ViewListingDetail';
 import ChatView from './ChatView';
+import ChatDirectoryView from './ChatDirectoryView';
 import './styles/dashboard.scss';
 
-export type DashboardView = 'create_edit' | 'bookmark' | 'view' | 'chat';
+export type DashboardView = 'create_edit' | 'bookmark' | 'view' | 'chat' | 'chat_directory';
 
 interface DashboardProps {
   view: DashboardView;
@@ -44,12 +46,29 @@ export default function Dashboard({
   const cognitoUserEmail = auth.user?.profile?.email || 'Unknown User';
   const cognitoUserId = auth.user?.profile?.sub || '';
 
+  // Track the target chat recipient when navigating from ChatDirectoryView
+  const [selectedChatRecipientId, setSelectedChatRecipientId] = useState<string | null>(null);
+
   const handleChat = (listing: Listing) => {
-    if (onChat) {
-      onChat(listing);
-    } else if (setView) {
-      setView('chat');
+    const isAuthor = listing.authorId === cognitoUserId;
+    
+    if (isAuthor) {
+      if (setView) {
+        setView('chat_directory');
+      }
+    } else {
+      if (onChat) {
+        onChat(listing);
+      } else if (setView) {
+        setSelectedChatRecipientId(listing.authorId);
+        setView('chat');
+      }
     }
+  };
+
+  const handleSelectChatFromDirectory = (recipientId: string) => {
+    setSelectedChatRecipientId(recipientId);
+    if (setView) setView('chat');
   };
 
   return (
@@ -100,12 +119,27 @@ export default function Dashboard({
         />
       )}
 
+      {view === 'chat_directory' && selectedListing && (
+        <ChatDirectoryView
+          listing={selectedListing}
+          currentUserId={cognitoUserId}
+          onBack={() => setView && setView('view')}
+          onSelectChat={handleSelectChatFromDirectory}
+        />
+      )}
+
       {view === 'chat' && selectedListing && (
         <ChatView
           listing={selectedListing}
           currentUserId={cognitoUserId}
           currentUserEmail={cognitoUserEmail}
-          onBack={() => setView && setView('view')}
+          recipientId={selectedChatRecipientId || selectedListing.authorId}
+          onBack={() => {
+            if (setView) {
+              const isAuthor = selectedListing.authorId === cognitoUserId;
+              setView(isAuthor ? 'chat_directory' : 'view');
+            }
+          }}
         />
       )}
     </div>

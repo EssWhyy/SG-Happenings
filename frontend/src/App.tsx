@@ -212,7 +212,8 @@ function MainLayout() {
   // Triggered when clicking the Chat button inside View listing detail
   const handleChat = (listing: Listing) => {
     setSelectedListing(listing);
-    setDashboardView('chat');
+    const isAuthor = listing.authorId === currentUserId;
+    setDashboardView(isAuthor ? 'chat_directory' : 'chat');
     setIsSidebarOpen(true);
   };
 
