@@ -37,6 +37,7 @@ export default function ChatDirectoryView({
 
   useEffect(() => {
     const fetchChatPartners = async () => {
+
       setLoading(true);
       const { data, error } = await supabase
         .from('messages')
@@ -44,7 +45,10 @@ export default function ChatDirectoryView({
         .eq('listing_id', listing.id)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
+      if (error) {
+        console.error('[ChatDirectoryView] Supabase fetch error:', error);
+      } else if (data) {
+        console.log('[ChatDirectoryView] Raw messages fetched:', data);
         const chatMap = new Map<string, { latestMessage: string; latestTimestamp: string }>();
 
         data.forEach((msg) => {
@@ -134,7 +138,9 @@ export default function ChatDirectoryView({
               <Card
                 key={chat.otherUserId}
                 variant="outlined"
-                onClick={() => onSelectChat(chat.otherUserId)}
+                onClick={() => {
+                  onSelectChat(chat.otherUserId);
+                }}
                 sx={{
                   borderRadius: 2,
                   cursor: 'pointer',

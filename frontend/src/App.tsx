@@ -1,4 +1,3 @@
-// App.tsx
 import { useEffect, useState, createContext, useContext, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from 'react-oidc-context';
@@ -12,20 +11,17 @@ import Header from './components/Header';
 import type { Listing } from '../../shared/apiContract';
 import { getUserAvatarUrl } from './utils/getAvatarUrl';
 
-// Configure OIDC Provider for AWS Cognito with Persistent LocalStorage
 const cognitoAuthConfig: AuthProviderProps = {
   authority: import.meta.env.VITE_COGNITO_AUTHORITY || 'https://cognito-idp.ap-southeast-1.amazonaws.com/ap-southeast-1_8JmiWWMJZ',
   client_id: import.meta.env.VITE_COGNITO_CLIENT_ID || '5lqa9a9o0nd3eb66uulika4ahs',
   redirect_uri: typeof window !== 'undefined' ? window.location.origin : '',
   response_type: 'code',
   scope: 'email openid profile',
-  // Persist JWT tokens and session data in localStorage across reloads/sessions
   userStore: typeof window !== 'undefined' 
     ? new WebStorageStateStore({ store: window.localStorage }) 
     : undefined,
   automaticSilentRenew: true,
   onSigninCallback: () => {
-    // Clean up OIDC query parameters (?code=...) from the URL after redirect
     window.history.replaceState({}, document.title, window.location.pathname);
   },
 };
@@ -54,14 +50,11 @@ function MainLayout() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
   const [pendingCoords, setPendingCoords] = useState<Coordinates | null>(null);
   
-  // Dashboard view and selection state
   const [dashboardView, setDashboardView] = useState<DashboardView>('bookmark');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
-  // Lift listings state so both Map and Dashboard share DynamoDB/OpenSearch data
   const [listings, setListings] = useState<Listing[]>([]);
 
-  // 1. Fetch initial DynamoDB listings on application mount
   const fetchListings = useCallback(async () => {
     try {
       console.log('[App] Fetching initial listings from DynamoDB backend...');
@@ -79,9 +72,7 @@ function MainLayout() {
     fetchListings();
   }, [fetchListings]);
 
-  // 2. Search Handler connected to AWS OpenSearch Backend
   const handleSearch = useCallback(async (query: string) => {
-    // If search is cleared, reload all listings from DynamoDB
     if (!query.trim()) {
       fetchListings();
       return;
@@ -100,7 +91,6 @@ function MainLayout() {
     }
   }, [backendUrl, fetchListings]);
 
-  // Handler for Header Bookmark button click
   const handleOpenBookmarks = () => {
     setSelectedListing(null);
     setPendingCoords(null);
@@ -108,7 +98,6 @@ function MainLayout() {
     setIsSidebarOpen(true);
   };
 
-  // Handler for Header Profile button click
   const handleToggleProfile = () => {
     if (!auth.isAuthenticated) {
       setIsLoginModalOpen(true);
@@ -117,7 +106,6 @@ function MainLayout() {
     setIsSidebarOpen((prev) => !prev);
   };
 
-  // Triggered when a new node placement is initiated on the map (Create Mode)
   const handleNodeAddedOnMap = (lat: number, lng: number) => {
     console.log('[App] New node location clicked on map at:', { lat, lng });
     setSelectedListing(null);
@@ -126,7 +114,6 @@ function MainLayout() {
     setIsSidebarOpen(true);
   };
 
-  // Triggered when an existing node on the map is clicked (View Mode)
   const handleMapNodeClick = async (listingId: string) => {
     try {
       console.log(`[App] Fetching listing details for ID: ${listingId}`);
@@ -144,7 +131,6 @@ function MainLayout() {
     }
   };
 
-  // Triggered when clicking an Edit button inside View mode or Bookmark list
   const handleEditListing = (listing: Listing) => {
     setSelectedListing(listing);
     setPendingCoords(null);
@@ -152,13 +138,11 @@ function MainLayout() {
     setIsSidebarOpen(true);
   };
 
-  // Triggered when selecting a card from the Bookmark listing
   const handleSelectListing = (listing: Listing) => {
     setSelectedListing(listing);
     setDashboardView('view');
   };
 
-  // Clears pending coordinates and selection state
   const handleCloseSidebar = () => {
     console.log('[App] Closing sidebar / resetting draft coordinates.');
     setPendingCoords(null);
@@ -166,7 +150,6 @@ function MainLayout() {
     setIsSidebarOpen(false);
   };
 
-  // Add/update listing to state upon successful deployment
   const handleDeploySuccess = (newListing?: Listing) => {
     console.log('[App] Listing successfully deployed to DynamoDB:', newListing);
     if (newListing) {
@@ -209,7 +192,7 @@ function MainLayout() {
     setIsLoginModalOpen(true);
   };
 
-  // Triggered when clicking the Chat button inside View listing detail
+  // Main chat route dispatcher
   const handleChat = (listing: Listing) => {
     setSelectedListing(listing);
     const isAuthor = listing.authorId === currentUserId;
@@ -233,7 +216,6 @@ function MainLayout() {
           element={
             <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', overflow: 'hidden' }}>
               
-              {/* Header Bar */}
               <Header 
                 onBookmarkClick={handleOpenBookmarks}
                 onProfileClick={handleToggleProfile}
@@ -241,10 +223,8 @@ function MainLayout() {
                 userAvatarUrl={avatarUrl}
               />
 
-              {/* Main Content Area */}
               <div style={{ display: 'flex', flex: 1, position: 'relative', overflow: 'hidden' }}>
                 
-                {/* Main Map Workspace */}
                 <div style={{ flex: 1, height: '100%', position: 'relative' }}>
                   <OneMapSingapore 
                     listings={listings}
@@ -255,7 +235,6 @@ function MainLayout() {
                   />
                 </div>
 
-                {/* Dashboard Side Panel */}
                 {isSidebarOpen && (
                   <div style={{
                     width: isMobile ? '100%' : '450px',
@@ -270,6 +249,7 @@ function MainLayout() {
                   }}>
                     <Dashboard 
                       view={dashboardView}
+                      setView={setDashboardView}
                       listings={listings}
                       setListings={setListings}
                       selectedListing={selectedListing}
@@ -287,7 +267,6 @@ function MainLayout() {
 
               </div>
 
-              {/* Material UI Animated Modal Login */}
               <LoginModal 
                 open={isLoginModalOpen} 
                 onClose={() => setIsLoginModalOpen(false)} 

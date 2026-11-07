@@ -47,13 +47,6 @@ export default function ViewListingDetail({
   }
 
   const isAuthor = selectedListing.authorId === cognitoUserId;
-          console.log('[ViewListingDetail] Debug:', {
-          listingId: selectedListing.id,
-          authorId: selectedListing.authorId,
-          cognitoUserId,
-          isAuthor,
-        });
-        
   const coordinatesText =
     selectedListing.latitude !== undefined && selectedListing.longitude !== undefined
       ? `(${selectedListing.latitude}, ${selectedListing.longitude})`
@@ -176,17 +169,17 @@ export default function ViewListingDetail({
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mt: 0.5 }}>
-      <Button
-        fullWidth
-        variant="outlined"
-        startIcon={<ChatBubbleOutlineIcon />}
-        onClick={() => onChat && onChat(selectedListing)}
-        sx={{ textTransform: 'none', py: 1 }}
-      >
-        {isAuthor ? 'View Chats' : 'Chat'}
-
-
-      </Button>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<ChatBubbleOutlineIcon />}
+          onClick={() => {
+            if (onChat) onChat(selectedListing);
+          }}
+          sx={{ textTransform: 'none', py: 1 }}
+        >
+          {isAuthor ? 'View Chats' : 'Chat'}
+        </Button>
         <Button
           fullWidth
           variant="outlined"

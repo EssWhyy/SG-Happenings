@@ -46,12 +46,12 @@ export default function Dashboard({
   const cognitoUserEmail = auth.user?.profile?.email || 'Unknown User';
   const cognitoUserId = auth.user?.profile?.sub || '';
 
-  // Track the target chat recipient when navigating from ChatDirectoryView
   const [selectedChatRecipientId, setSelectedChatRecipientId] = useState<string | null>(null);
+
 
   const handleChat = (listing: Listing) => {
     const isAuthor = listing.authorId === cognitoUserId;
-    
+
     if (isAuthor) {
       if (setView) {
         setView('chat_directory');
@@ -123,7 +123,9 @@ export default function Dashboard({
         <ChatDirectoryView
           listing={selectedListing}
           currentUserId={cognitoUserId}
-          onBack={() => setView && setView('view')}
+          onBack={() => {
+            if (setView) setView('view');
+          }}
           onSelectChat={handleSelectChatFromDirectory}
         />
       )}
